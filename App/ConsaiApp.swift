@@ -101,5 +101,11 @@ struct ConsaiApp: App {
             MultiLogWindow().environment(appState)
         }
         .defaultSize(width: 900, height: 500)
+
+        Window("Setup", id: "setup") {
+            SetupWindow().environment(appState)
+        }
+        .windowResizability(.contentSize)
+        .defaultPosition(.center)
     }
 }
