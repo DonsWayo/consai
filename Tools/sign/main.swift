@@ -4,30 +4,30 @@ import Foundation
 //
 // Requires a one-time build first:   swift run bundle
 //
-// Required env vars:
+// One-time credential setup (stores securely in the system Keychain — no env vars needed after):
+//   xcrun notarytool store-credentials "Consai" \
+//     --apple-id you@example.com \
+//     --team-id XXXXXXXXXX \
+//     --password xxxx-xxxx-xxxx-xxxx   # app-specific password from appleid.apple.com
+//
+// Required env var:
 //   CONSAI_IDENTITY    "Developer ID Application: Your Name (TEAMID)"
-//   CONSAI_TEAM_ID     Your 10-char Apple team ID
-//   CONSAI_APPLE_ID    Your Apple ID email (for notarytool)
-//   CONSAI_APP_PWD     App-specific password from appleid.apple.com
+//
+// Optional env var (default "Consai" — the profile name used in store-credentials above):
+//   CONSAI_KEYCHAIN_PROFILE   name of the stored credential profile
 //
 // Usage:
 //   export CONSAI_IDENTITY="Developer ID Application: Juan Carracedo (XXXXXXXXXX)"
-//   export CONSAI_TEAM_ID="XXXXXXXXXX"
-//   export CONSAI_APPLE_ID="you@example.com"
-//   export CONSAI_APP_PWD="xxxx-xxxx-xxxx-xxxx"
-//   swift run sign
+//   swift run bundle && swift run sign
 
-func env(_ key: String) -> String {
-    guard let v = ProcessInfo.processInfo.environment[key], !v.isEmpty else {
-        fail("Missing required env var \(key). See Tools/sign/main.swift for setup.")
-    }
-    return v
+func env(_ key: String, default defaultValue: String? = nil) -> String {
+    if let v = ProcessInfo.processInfo.environment[key], !v.isEmpty { return v }
+    if let d = defaultValue { return d }
+    fail("Missing required env var \(key). See Tools/sign/main.swift for setup.")
 }
 
-let identity  = env("CONSAI_IDENTITY")
-let teamID    = env("CONSAI_TEAM_ID")
-let appleID   = env("CONSAI_APPLE_ID")
-let appPwd    = env("CONSAI_APP_PWD")
+let identity         = env("CONSAI_IDENTITY")
+let keychainProfile  = env("CONSAI_KEYCHAIN_PROFILE", default: "Consai")
 
 let fm   = FileManager.default
 let root = URL(fileURLWithPath: fm.currentDirectoryPath)
@@ -56,27 +56,28 @@ print("==> Zipping for notarization…")
 try? fm.removeItem(atPath: zipPath)
 try run("/usr/bin/ditto", ["-c", "-k", "--sequesterRsrc", "--keepParent", app.path, zipPath], cwd: root)
 
-// 3 — Submit to Apple notary service
+// 3 — Submit to Apple notary service using stored keychain credentials (password never in argv)
 print("==> Submitting to Apple notary service (this takes 1-5 min)…")
-let submitOutput = try output("/usr/bin/xcrun", [
+print("    Using keychain profile: \(keychainProfile)")
+let submitOutput = try captureOutput("/usr/bin/xcrun", [
     "notarytool", "submit", zipPath,
-    "--apple-id", appleID,
-    "--password", appPwd,
-    "--team-id", teamID,
+    "--keychain-profile", keychainProfile,
     "--wait",
     "--output-format", "json",
 ], cwd: root)
 
-// Parse submission ID from JSON for error reporting
+// Parse submission result from JSON
 if let data = submitOutput.data(using: .utf8),
    let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-    if let status = json["status"] as? String, status != "Accepted" {
-        let id = json["id"] as? String ?? "?"
-        fail("Notarization failed (status: \(status), id: \(id)). Run:\n  xcrun notarytool log \(id) --apple-id \(appleID) --password \(appPwd) --team-id \(teamID)")
+    let id = json["id"] as? String ?? "?"
+    let status = json["status"] as? String ?? "?"
+    if status != "Accepted" {
+        fail("Notarization failed (status: \(status), submission id: \(id)).\n"
+           + "  Inspect the log: xcrun notarytool log \(id) --keychain-profile \(keychainProfile)")
     }
-    print("==> Notarization accepted.")
+    print("==> Notarization accepted (id: \(id)).")
 } else {
-    print("==> Notarytool output: \(submitOutput)")
+    print("==> notarytool output: \(submitOutput)")
 }
 
 // 4 — Staple the notarization ticket to the app
@@ -115,7 +116,8 @@ print("==> Done.")
 print("    Signed + notarized + stapled: \(app.path)")
 print("    Distributable DMG:            \(dmgPath)")
 print("")
-print("Next: create a GitHub release, upload \(dmgName), then update the Homebrew cask sha256.")
+print("Next: create a GitHub release, upload \(dmgName), then:")
+print("  swift packaging/update-cask.swift \(dmgName)")
 
 // MARK: - helpers
 
@@ -127,19 +129,21 @@ func appVersion(in appURL: URL) -> String? {
     return obj["CFBundleShortVersionString"] as? String
 }
 
-@discardableResult
-func run(_ tool: String, _ args: [String], cwd: URL) throws -> String {
+func run(_ tool: String, _ args: [String], cwd: URL) throws {
     let p = Process()
     p.executableURL = URL(fileURLWithPath: tool)
     p.arguments = args
     p.currentDirectoryURL = cwd
     try p.run()
     p.waitUntilExit()
-    if p.terminationStatus != 0 { fail("\(([tool] + args).joined(separator: " ")) exited \(p.terminationStatus)") }
-    return ""
+    // Report the tool name + non-secret args only (no credentials in argv here)
+    if p.terminationStatus != 0 {
+        let displayArgs = args.joined(separator: " ")
+        fail("\(tool) \(displayArgs) exited \(p.terminationStatus)")
+    }
 }
 
-func output(_ tool: String, _ args: [String], cwd: URL) throws -> String {
+func captureOutput(_ tool: String, _ args: [String], cwd: URL) throws -> String {
     let p = Process()
     p.executableURL = URL(fileURLWithPath: tool)
     p.arguments = args
@@ -149,7 +153,11 @@ func output(_ tool: String, _ args: [String], cwd: URL) throws -> String {
     try p.run()
     p.waitUntilExit()
     let data = pipe.fileHandleForReading.readDataToEndOfFile()
-    if p.terminationStatus != 0 { fail("\(([tool] + args).joined(separator: " ")) exited \(p.terminationStatus)") }
+    if p.terminationStatus != 0 {
+        // Do not include args in the error: they contain the keychain profile name but
+        // redacting individual flags here is fragile; the profile name is non-sensitive.
+        fail("notarytool exited \(p.terminationStatus). Check your keychain profile: \(keychainProfile)")
+    }
     return String(decoding: data, as: UTF8.self)
 }
 
