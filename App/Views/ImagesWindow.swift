@@ -60,21 +60,11 @@ struct ImagesWindow: View {
             ScrollView {
                 LazyVStack(spacing: 0) {
                     ForEach(appState.images) { image in
-                        HStack(spacing: 10) {
-                            VStack(alignment: .leading, spacing: 1) {
-                                Text(image.reference).font(Theme.ui(13, .medium)).foregroundStyle(Theme.text)
-                                    .textSelection(.enabled).lineLimit(1).truncationMode(.middle)
-                                Text(image.shortDigest).font(Theme.mono(10)).foregroundStyle(Theme.dim2)
-                            }
-                            Spacer(minLength: 8)
-                            if deleting == image.reference {
-                                ProgressView().controlSize(.small)
-                            } else {
-                                Button { confirmingDelete = image.reference } label: { Image(systemName: "trash") }
-                                    .buttonStyle(.plain).foregroundStyle(Theme.dim).help("Delete")
-                            }
-                        }
-                        .padding(.horizontal, 14).padding(.vertical, 8)
+                        ImageRow(
+                            image: image,
+                            isDeleting: deleting == image.reference,
+                            onDelete: { confirmingDelete = image.reference }
+                        )
                         Rectangle().fill(Theme.hairline).frame(height: 0.5)
                     }
                 }
@@ -92,5 +82,39 @@ struct ImagesWindow: View {
     private func delete(_ reference: String) {
         deleting = reference
         Task { await appState.deleteImage(reference); deleting = nil }
+    }
+}
+
+/// Single image row with hover lift, matching the ContainerRow affordance.
+private struct ImageRow: View {
+    let image: ContainerImage
+    let isDeleting: Bool
+    let onDelete: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
+        HStack(spacing: 10) {
+            VStack(alignment: .leading, spacing: 1) {
+                Text(image.reference)
+                    .font(Theme.ui(13, .medium)).foregroundStyle(Theme.text)
+                    .textSelection(.enabled).lineLimit(1).truncationMode(.middle)
+                Text(image.shortDigest)
+                    .font(Theme.mono(10)).foregroundStyle(Theme.dim2)
+            }
+            Spacer(minLength: 8)
+            if isDeleting {
+                ProgressView().controlSize(.small)
+            } else {
+                Button(action: onDelete) { Image(systemName: "trash") }
+                    .buttonStyle(.plain).foregroundStyle(Theme.dim).help("Delete")
+                    .opacity(hovering ? 1 : 0)
+            }
+        }
+        .padding(.horizontal, 14).padding(.vertical, 8)
+        .background(hovering ? Theme.hover : .clear, in: RoundedRectangle(cornerRadius: 7))
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.13), value: hovering)
     }
 }
