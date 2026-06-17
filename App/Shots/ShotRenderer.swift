@@ -54,6 +54,8 @@ enum ShotRenderer {
         try? await Task.sleep(for: .seconds(2.5))
         await state.refresh()
         await shoot(PanelView().environment(state), width: 360, height: 600, name: "live-panel", dir: dir)
+        await state.loadImages()
+        await shoot(ImagesWindow().environment(state), width: 560, height: 420, name: "live-images", dir: dir)
         FileHandle.standardError.write(Data("rendered live panel to \(dir.path)\n".utf8))
     }
 

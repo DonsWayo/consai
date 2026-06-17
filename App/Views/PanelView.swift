@@ -110,6 +110,7 @@ struct PanelView: View {
                     if let file = ComposeFilePicker.pick() { Task { await appState.composeUp(file: file) } }
                 }
             }
+            footerButton("photo.stack", "Images") { openWindow(id: "images") }
             Spacer()
             footerButton("arrow.clockwise", nil) { Task { await appState.refresh() } }
             footerButton("gearshape", "Tend") { openWindow(id: "settings") }

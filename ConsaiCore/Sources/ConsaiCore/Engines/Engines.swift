@@ -24,6 +24,14 @@ public protocol ComposeEngine: Sendable {
     func down(file: URL) async throws
 }
 
+/// Manages local OCI images. `list` uses the SDK; `pull`/`delete` shell out to the CLI
+/// (the SDK pull requires a `ContainerSystemConfig` the CLI resolves for us).
+public protocol ImageEngine: Sendable {
+    func list() async throws -> [ContainerImage]
+    func pull(reference: String) async throws
+    func delete(reference: String) async throws
+}
+
 /// Checks/controls the `container` system service.
 /// The concrete `CLIServiceHealth` is implemented in Wave 1.
 public protocol ServiceHealthChecking: Sendable {
