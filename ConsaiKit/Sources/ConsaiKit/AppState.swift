@@ -19,6 +19,8 @@ public final class AppState {
     public var lastError: String?
 
     public private(set) var images: [ContainerImage] = []
+    /// Set while a pull is in progress: the reference being pulled. Nil when idle.
+    public private(set) var pullProgress: String?
     public private(set) var networks: [ContainerNetwork] = []
     public private(set) var volumes: [ContainerVolume] = []
 
@@ -273,8 +275,10 @@ public final class AppState {
         catch { lastError = describe(error) }
     }
 
-    /// Pull an image; returns true on success. Refreshes the image list.
+    /// Pull an image; returns true on success. Sets `pullProgress` during the pull.
     public func pullImage(_ reference: String) async -> Bool {
+        pullProgress = reference
+        defer { pullProgress = nil }
         do {
             try await imageEngine.pull(reference: reference)
             await loadImages()
