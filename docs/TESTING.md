@@ -6,14 +6,21 @@ differently, and coverage should be read per tier — not as a single blended nu
 
 ## Running the tests
 
+Everything builds and runs **locally** — there is no GitHub Actions / hosted CI (Apple's
+`container` SDK can't build on hosted runners, and the project targets a developer's
+macOS 26 / Xcode 26 machine). Run the pre-flight script before pushing:
+
+```bash
+scripts/check.sh            # swift build + swift test
+scripts/check.sh coverage   # + llvm-cov report for the logic layers
+```
+
+Or directly:
+
 ```bash
 swift test                                  # fast, no daemon required
 swift test --enable-code-coverage           # adds llvm-cov instrumentation
-```
 
-Coverage report (logic layers only):
-
-```bash
 PROF=$(find .build -name default.profdata | head -1)
 BIN=$(find .build -name ConsaiPackageTests -type f | head -1)
 xcrun llvm-cov report "$BIN" -instr-profile "$PROF" ConsaiCore/Sources ConsaiKit/Sources
