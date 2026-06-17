@@ -1,6 +1,7 @@
 import SwiftUI
 import ConsaiCore
 import ConsaiKit
+import AppKit
 
 /// The menu bar panel — Bonsai look: mark + wordmark, leaf-marked stacks on branches,
 /// standalone containers, a tend-the-garden footer.
@@ -115,7 +116,12 @@ struct PanelView: View {
             footerButton("network", nil, help: "Networks & volumes") { openWindow(id: "infra") }
             Spacer()
             footerButton("arrow.clockwise", nil, help: "Refresh") { Task { await appState.refresh() } }
-            footerButton("gearshape", "Tend", help: "Settings") { openWindow(id: "settings") }
+            footerButton("gearshape", nil, help: "Settings") { openWindow(id: "settings") }
+            Button { NSApplication.shared.terminate(nil) } label: {
+                Image(systemName: "power").font(.system(size: 12))
+            }
+            .buttonStyle(.plain).foregroundStyle(Theme.dim).help("Quit Consai (⌘Q)")
+            .keyboardShortcut("q", modifiers: .command)
         }
         .padding(.horizontal, 16).padding(.vertical, 11)
     }
