@@ -1,0 +1,67 @@
+import SwiftUI
+import ConsaiCore
+import AppKit
+
+/// Settings: container system service control, compose availability, poll cadence.
+struct SettingsWindow: View {
+    @Environment(AppState.self) private var appState
+    @AppStorage("pollOpen") private var pollOpen = 2.0
+    @AppStorage("pollClosed") private var pollClosed = 15.0
+    @State private var working = false
+
+    var body: some View {
+        Form {
+            Section("Container service") {
+                LabeledContent("Status") {
+                    HStack(spacing: 6) {
+                        Circle().fill(appState.isServiceRunning ? .green : .secondary).frame(width: 8, height: 8)
+                        Text(statusText)
+                    }
+                }
+                HStack {
+                    Button("Start") { run { await appState.startService() } }
+                        .disabled(appState.isServiceRunning || working)
+                    Button("Stop") { run { await appState.stopService() } }
+                        .disabled(!appState.isServiceRunning || working)
+                    if working { ProgressView().controlSize(.small) }
+                }
+            }
+
+            Section("Compose") {
+                LabeledContent("container-compose") {
+                    Text(appState.composeAvailable ? "Installed" : "Not installed")
+                        .foregroundStyle(appState.composeAvailable ? .green : .secondary)
+                }
+                if !appState.composeAvailable {
+                    Text("Install with: brew install container-compose")
+                        .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
+                }
+            }
+
+            Section("Refresh cadence") {
+                LabeledContent("Panel open") {
+                    Stepper("\(pollOpen, specifier: "%.0f")s", value: $pollOpen, in: 1...10)
+                }
+                LabeledContent("Panel closed") {
+                    Stepper("\(pollClosed, specifier: "%.0f")s", value: $pollClosed, in: 5...60, step: 5)
+                }
+            }
+        }
+        .formStyle(.grouped)
+        .frame(width: 420, height: 360)
+        .onAppear { NSApp.activate(ignoringOtherApps: true) }
+    }
+
+    private var statusText: String {
+        switch appState.serviceStatus {
+        case .running: return "Running"
+        case .stopped: return "Stopped"
+        case .unknown: return "Unknown"
+        }
+    }
+
+    private func run(_ op: @escaping () async -> Void) {
+        working = true
+        Task { await op(); working = false }
+    }
+}

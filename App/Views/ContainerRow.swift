@@ -4,6 +4,7 @@ import ConsaiCore
 /// One container row: status dot, name/image, and hover quick actions.
 struct ContainerRow: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openWindow) private var openWindow
     let container: Container
     @State private var hovering = false
     @State private var confirmingDelete = false
@@ -44,6 +45,7 @@ struct ContainerRow: View {
         } else {
             iconButton("play.fill", "Start") { Task { await appState.start(container.id) } }
         }
+        iconButton("doc.text", "Logs") { openWindow(id: "logs", value: container.id) }
         iconButton("trash", "Delete") { confirmingDelete = true }
     }
 

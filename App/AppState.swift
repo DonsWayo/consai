@@ -18,6 +18,7 @@ final class AppState {
     private let containerEngine: ContainerEngine
     private let composeEngine: ComposeEngine
     private let serviceHealth: ServiceHealthChecking
+    private let creator: ContainerCreating
     private let store: RegistryStore
     private var registry: ProjectRegistry
     private var pollTask: Task<Void, Never>?
@@ -40,11 +41,13 @@ final class AppState {
         containerEngine: ContainerEngine = SDKContainerEngine(),
         composeEngine: ComposeEngine = CLIComposeEngine(),
         serviceHealth: ServiceHealthChecking = CLIServiceHealth(),
+        creator: ContainerCreating = CLIContainerCreator(),
         store: RegistryStore = RegistryStore()
     ) {
         self.containerEngine = containerEngine
         self.composeEngine = composeEngine
         self.serviceHealth = serviceHealth
+        self.creator = creator
         self.store = store
         self.registry = store.load()
         startPolling()
@@ -58,7 +61,10 @@ final class AppState {
             while !Task.isCancelled {
                 await self?.refresh()
                 let fast = self?.panelVisible ?? false
-                try? await Task.sleep(for: .seconds(fast ? 2 : 15))
+                let defaults = UserDefaults.standard
+                let open = defaults.object(forKey: "pollOpen") as? Double ?? 2
+                let closed = defaults.object(forKey: "pollClosed") as? Double ?? 15
+                try? await Task.sleep(for: .seconds(fast ? open : closed))
             }
         }
     }
@@ -164,6 +170,27 @@ final class AppState {
             await refresh()
         } catch {
             lastError = describe(error)
+        }
+    }
+
+    func stopService() async {
+        do {
+            try await serviceHealth.stop()
+            await refresh()
+        } catch {
+            lastError = describe(error)
+        }
+    }
+
+    /// Create + run a new container. Returns true on success (so the window can close).
+    func create(_ spec: NewContainerSpec) async -> Bool {
+        do {
+            try await creator.create(spec)
+            await refresh()
+            return true
+        } catch {
+            lastError = describe(error)
+            return false
         }
     }
 

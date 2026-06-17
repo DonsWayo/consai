@@ -61,6 +61,34 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
     }
 }
 
+@Suite struct CLIContainerCreatorTests {
+    @Test func buildsRunArgumentsInOrder() {
+        let spec = NewContainerSpec(
+            image: "nginx:latest",
+            name: "web",
+            env: ["B": "2", "A": "1"],
+            ports: [PortMapping(hostPort: 8080, containerPort: 80)],
+            volumes: [VolumeMount(hostPath: "/data", containerPath: "/var/data")],
+            command: "nginx -g daemon off;"
+        )
+        let args = CLIContainerCreator.runArguments(for: spec)
+        #expect(args == [
+            "run", "-d",
+            "--name", "web",
+            "--env", "A=1", "--env", "B=2",          // env sorted by key
+            "--publish", "8080:80",
+            "--volume", "/data:/var/data",
+            "nginx:latest",
+            "nginx", "-g", "daemon", "off;",
+        ])
+    }
+
+    @Test func minimalSpecIsJustRunImage() {
+        let args = CLIContainerCreator.runArguments(for: NewContainerSpec(image: "redis"))
+        #expect(args == ["run", "-d", "redis"])
+    }
+}
+
 @Suite struct CLIServiceHealthTests {
     @Test func parsesNegativeSignalsAsStopped() {
         #expect(CLIServiceHealth.parseStatus(exitCode: 0, output: "apiserver is not running") == .stopped)

@@ -4,6 +4,7 @@ import ConsaiCore
 /// The menu bar dropdown panel. Header + service banner + container list.
 struct PanelView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.openWindow) private var openWindow
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -35,6 +36,9 @@ struct PanelView: View {
                     .font(.caption).foregroundStyle(.secondary)
             }
             Spacer()
+            Button { openWindow(id: "create") } label: { Image(systemName: "plus") }
+                .buttonStyle(.borderless)
+                .help("New container…")
             if appState.composeAvailable {
                 Button { composeUp() } label: { Image(systemName: "square.stack.3d.up") }
                     .buttonStyle(.borderless)
@@ -48,10 +52,9 @@ struct PanelView: View {
             .buttonStyle(.borderless)
             .help("Refresh")
 
-            Button { /* Wave 4: Settings */ } label: { Image(systemName: "gearshape") }
+            Button { openWindow(id: "settings") } label: { Image(systemName: "gearshape") }
                 .buttonStyle(.borderless)
                 .help("Settings")
-                .disabled(true)
         }
         .padding(12)
     }
