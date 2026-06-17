@@ -27,6 +27,14 @@ enum Theme {
     static let panelWidth: CGFloat = 360
 }
 
+extension View {
+    /// The shared Consai surface: a soft top-lit depth gradient (replaces flat `Theme.bg`) so
+    /// every window — panel and secondary — reads as one app. One source of truth.
+    func consaiSurface() -> some View {
+        background(LinearGradient(colors: [Theme.bgTop, Theme.bg], startPoint: .top, endPoint: .bottom))
+    }
+}
+
 extension Color {
     init(hex: UInt) {
         self.init(.sRGB,

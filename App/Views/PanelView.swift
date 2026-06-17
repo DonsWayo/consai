@@ -39,9 +39,7 @@ struct PanelView: View {
             footer
         }
         .frame(width: Theme.panelWidth)
-        .background(
-            LinearGradient(colors: [Theme.bgTop, Theme.bg], startPoint: .top, endPoint: .bottom)
-        )
+        .consaiSurface()
         .preferredColorScheme(.dark)
         .tint(Theme.jade)
         .onAppear { appState.setPanelVisible(true) }

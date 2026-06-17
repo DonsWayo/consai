@@ -47,7 +47,7 @@ struct InfraWindow: View {
             .padding(.bottom, 8)
         }
         .frame(minWidth: 520, minHeight: 380)
-        .background(Theme.bg)
+        .consaiSurface()
         .preferredColorScheme(.dark).tint(Theme.jade)
         .navigationTitle("Networks & Volumes")
         .confirmationDialog(deleteTitle, isPresented: Binding(
