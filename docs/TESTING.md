@@ -8,14 +8,18 @@ differently, and coverage should be read per tier — not as a single blended nu
 
 Everything builds and runs **locally** — there is no GitHub Actions / hosted CI (Apple's
 `container` SDK can't build on hosted runners, and the project targets a developer's
-macOS 26 / Xcode 26 machine). Run the pre-flight script before pushing:
+macOS 26 / Xcode 26 machine). The pre-flight check is a native SwiftPM command plugin
+(`Plugins/Check`), not a shell script:
 
 ```bash
-scripts/check.sh            # swift build + swift test
-scripts/check.sh coverage   # + llvm-cov report for the logic layers
+swift package --disable-sandbox check                                       # build + test
+swift package --disable-sandbox --allow-writing-to-package-directory check coverage   # + llvm-cov report
 ```
 
-Or directly:
+(`--disable-sandbox` lets the plugin spawn `swift`/`xcrun`; the write flag is needed only
+for the `coverage` run, which writes profdata under `.build`.)
+
+Or invoke the toolchain directly — `swift test` is itself the native test runner:
 
 ```bash
 swift test                                  # fast, no daemon required

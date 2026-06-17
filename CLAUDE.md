@@ -110,8 +110,9 @@ window-close and `applicationWillTerminate`.
 ### R7 — Build environment not present here (MEDIUM)
 On this machine `xcodebuild`/Xcode 26 was not detected and `container-compose` is not
 installed, so the app **cannot be compile-verified locally yet**. `container` *is* present.
-**Mitigation:** treat "builds in Xcode 26" as a manual gate the developer runs; CI runs only
-the pure `ConsaiCore` tests.
+**Mitigation:** treat "builds in Xcode 26" as a manual gate the developer runs. There is no
+hosted CI (Apple's SDK graph can't build on hosted runners) — verify locally with `swift
+test` / `swift package check` (the `check` SwiftPM command plugin). See `docs/TESTING.md`.
 
 ### R8 — Crowded ecosystem (LOW / product)
 Many compose tools and full GUIs already exist; the menu-bar-first niche is the

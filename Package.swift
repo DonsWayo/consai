@@ -49,5 +49,12 @@ let package = Package(
             dependencies: ["ConsaiKit", "ConsaiCore"],
             path: "ConsaiKit/Tests/ConsaiKitTests"
         ),
+        // Native-Swift coverage reporter (replaces the old shell script). There is no hosted
+        // CI — Apple's container SDK graph can't build on hosted runners — so verification is
+        // local. After `swift test --enable-code-coverage`, run `swift run coverage` to print
+        // the llvm-cov report for the logic layers. Depends on Foundation only (no ConsaiCore),
+        // so `swift run coverage` builds in a second and only shells out to `xcrun` — it never
+        // re-invokes SwiftPM, so there is no build-lock deadlock.
+        .executableTarget(name: "coverage", path: "Tools/coverage"),
     ]
 )
