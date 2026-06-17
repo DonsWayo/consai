@@ -14,6 +14,7 @@ private struct ListHeightKey: PreferenceKey {
 struct PanelView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openWindow) private var openWindow
+    @AppStorage("setupCompleted") private var setupCompleted = false
 
     /// Natural height of the scrollable list, measured so the menu-bar window can size to its
     /// content instead of collapsing the ScrollView to ~0pt (MenuBarExtra sizes to ideal size).
@@ -48,7 +49,10 @@ struct PanelView: View {
         .consaiSurface()
         .preferredColorScheme(.dark)
         .tint(Theme.jade)
-        .onAppear { appState.setPanelVisible(true) }
+        .onAppear {
+            appState.setPanelVisible(true)
+            if !setupCompleted { openWindow(id: "setup") }
+        }
         .onDisappear { appState.setPanelVisible(false) }
     }
 
