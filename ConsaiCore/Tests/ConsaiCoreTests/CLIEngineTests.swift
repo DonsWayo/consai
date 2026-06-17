@@ -127,6 +127,19 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
         #expect(containerExecCommand(binary: "container", id: "db", shell: "bash")
                 == "container exec -it db bash")
     }
+
+    @Test func validatesContainerNamesAndRejectsInjection() {
+        #expect(isValidContainerName("shop-api"))
+        #expect(isValidContainerName("my_db.1"))
+        #expect(!isValidContainerName(""))
+        #expect(!isValidContainerName("-leadingdash"))   // must start alphanumeric
+        // Injection attempts must be rejected before reaching the shell/AppleScript.
+        #expect(!isValidContainerName("web; rm -rf /"))
+        #expect(!isValidContainerName("a$(whoami)"))
+        #expect(!isValidContainerName("a\"; do shell script \"x"))
+        #expect(!isValidContainerName("a b"))
+        #expect(!isValidContainerName("a\nb"))
+    }
 }
 
 @Suite struct FormatBytesTests {

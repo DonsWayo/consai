@@ -40,3 +40,12 @@ public struct ContainerDetail: Sendable {
 public func containerExecCommand(binary: String, id: String, shell: String = "sh") -> String {
     "\(binary) exec -it \(id) \(shell)"
 }
+
+/// Whether a container name/id is safe to interpolate into a shell/AppleScript command.
+/// Apple container names are LDH-style (alphanumeric + `-`/`.`/`_`); anything else (spaces,
+/// quotes, `;`, `$`, backticks, newlines, …) is rejected to prevent command injection.
+public func isValidContainerName(_ name: String) -> Bool {
+    !name.isEmpty
+        && name.count <= 128
+        && name.range(of: "^[A-Za-z0-9][A-Za-z0-9_.-]*$", options: .regularExpression) != nil
+}
