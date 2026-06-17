@@ -48,6 +48,8 @@ struct SettingsWindow: View {
             }
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
+        .background(Theme.bg)
         .frame(width: 420, height: 360)
         .onAppear { NSApp.activate(ignoringOtherApps: true) }
     }

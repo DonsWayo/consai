@@ -11,6 +11,7 @@ struct MockContainerEngine: ContainerEngine {
     func stop(id: String) async throws {}
     func restart(id: String) async throws {}
     func delete(id: String) async throws {}
+    func memoryUsage(id: String) async -> UInt64? { containers.first { $0.id == id }?.memoryBytes }
 }
 
 struct MockComposeEngine: ComposeEngine {

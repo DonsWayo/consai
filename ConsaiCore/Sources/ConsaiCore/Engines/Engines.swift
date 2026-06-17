@@ -8,6 +8,8 @@ public protocol ContainerEngine: Sendable {
     func stop(id: String) async throws
     func restart(id: String) async throws
     func delete(id: String) async throws
+    /// Best-effort live resident memory in bytes; nil if unavailable.
+    func memoryUsage(id: String) async -> UInt64?
 }
 
 /// Orchestrates compose stacks by shelling out to the `container-compose` CLI.

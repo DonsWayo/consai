@@ -10,6 +10,8 @@
 	<string>Consai</string>
 	<key>CFBundleExecutable</key>
 	<string>Consai</string>
+	<key>CFBundleIconFile</key>
+	<string>AppIcon</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.donswayo.consai</string>
 	<key>CFBundleInfoDictionaryVersion</key>

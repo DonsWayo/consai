@@ -51,10 +51,16 @@ struct ContainerRow: View {
     private var vitals: some View {
         switch container.status {
         case .running:
-            if let ip = container.ipAddress {
-                Text(ip).font(Theme.mono(10)).foregroundStyle(Theme.ip)
-            } else {
-                Text("alive").font(Theme.mono(10)).foregroundStyle(Theme.jade)
+            HStack(spacing: 5) {
+                if let ip = container.ipAddress {
+                    Text(ip).font(Theme.mono(10)).foregroundStyle(Theme.ip)
+                }
+                if let mem = container.memoryBytes {
+                    if container.ipAddress != nil { Text("·").font(Theme.mono(10)).foregroundStyle(Theme.dim2) }
+                    Text(formatBytes(mem)).font(Theme.mono(10)).foregroundStyle(Theme.dim)
+                } else if container.ipAddress == nil {
+                    Text("alive").font(Theme.mono(10)).foregroundStyle(Theme.jade)
+                }
             }
         case .stopped:
             Text("resting").font(Theme.mono(10)).foregroundStyle(Theme.dim2)

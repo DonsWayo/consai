@@ -41,6 +41,8 @@ struct CreateContainerWindow: View {
                 }
             }
             .formStyle(.grouped)
+            .scrollContentBackground(.hidden)
+            .background(Theme.bg)
 
             Divider()
             HStack {
@@ -52,6 +54,7 @@ struct CreateContainerWindow: View {
             .padding(12)
         }
         .frame(width: 520, height: 540)
+        .background(Theme.bg)
         .onAppear { NSApp.activate(ignoringOtherApps: true) }
     }
 

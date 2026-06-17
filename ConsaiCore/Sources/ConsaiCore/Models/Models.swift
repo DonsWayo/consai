@@ -14,6 +14,8 @@ public struct Container: Identifiable, Hashable, Sendable {
     public var status: ContainerStatus
     /// Primary IPv4 address (Apple gives every container its own), without the CIDR suffix.
     public var ipAddress: String?
+    /// Live resident memory in bytes (best-effort; nil until fetched / when stopped).
+    public var memoryBytes: UInt64?
     public var labels: [String: String]
 
     public init(
@@ -22,6 +24,7 @@ public struct Container: Identifiable, Hashable, Sendable {
         image: String,
         status: ContainerStatus,
         ipAddress: String? = nil,
+        memoryBytes: UInt64? = nil,
         labels: [String: String] = [:]
     ) {
         self.id = id
@@ -29,8 +32,16 @@ public struct Container: Identifiable, Hashable, Sendable {
         self.image = image
         self.status = status
         self.ipAddress = ipAddress
+        self.memoryBytes = memoryBytes
         self.labels = labels
     }
+}
+
+/// Human-readable byte formatting for vitals ("178 MB", "1.0 GB").
+public func formatBytes(_ bytes: UInt64) -> String {
+    let mb = Double(bytes) / 1_048_576
+    if mb >= 1024 { return String(format: "%.1f GB", mb / 1024) }
+    return "\(Int(mb.rounded())) MB"
 }
 
 /// Whether a stack was launched by Consai (authoritative, has compose file) or merely

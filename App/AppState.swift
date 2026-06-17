@@ -31,9 +31,9 @@ final class AppState {
 
     var menuBarSymbol: String {
         switch serviceStatus {
-        case .running: return "shippingbox.fill"
+        case .running: return "leaf.fill"
         case .stopped: return "exclamationmark.triangle.fill"
-        case .unknown: return "shippingbox"
+        case .unknown: return "leaf"
         }
     }
 
@@ -91,20 +91,40 @@ final class AppState {
         do {
             let fresh = try await containerEngine.list()
             // Preserve an in-flight container's optimistic status so a poll mid-action
-            // doesn't flicker it back to the pre-action state.
+            // doesn't flicker it back to the pre-action state. Carry over last-known memory
+            // so vitals don't blink to empty between fetches.
+            let priorMemory = Dictionary(containers.map { ($0.id, $0.memoryBytes) }, uniquingKeysWith: { a, _ in a })
             containers = fresh.map { incoming in
+                var c = incoming
+                c.memoryBytes = priorMemory[incoming.id] ?? nil
                 if inFlight.contains(incoming.id),
                    let existing = containers.first(where: { $0.id == incoming.id }) {
-                    var merged = incoming
-                    merged.status = existing.status
-                    return merged
+                    c.status = existing.status
                 }
-                return incoming
+                return c
             }
             reassemble()
+            await fetchMemory()
         } catch {
             lastError = describe(error)
         }
+    }
+
+    /// Concurrently fetch live memory for running containers, then re-assemble. Best-effort.
+    private func fetchMemory() async {
+        let engine = containerEngine
+        let running = containers.filter { $0.status == .running }.map(\.id)
+        guard !running.isEmpty else { return }
+        let results = await withTaskGroup(of: (String, UInt64?).self) { group -> [(String, UInt64?)] in
+            for id in running { group.addTask { (id, await engine.memoryUsage(id: id)) } }
+            var out: [(String, UInt64?)] = []
+            for await r in group { out.append(r) }
+            return out
+        }
+        for (id, mem) in results {
+            if let idx = containers.firstIndex(where: { $0.id == id }) { containers[idx].memoryBytes = mem }
+        }
+        reassemble()
     }
 
     /// Recompute stacks + standalone from the current container list and known projects.

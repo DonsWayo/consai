@@ -57,6 +57,10 @@ public struct SDKContainerEngine: ContainerEngine {
         }
     }
 
+    public func memoryUsage(id: String) async -> UInt64? {
+        try? await ContainerClient().stats(id: id).memoryUsageBytes
+    }
+
     // MARK: - Mapping (SDK → Consai)
 
     /// In this SDK the container id *is* its display name (`configuration.id`).

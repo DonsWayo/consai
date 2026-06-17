@@ -31,7 +31,7 @@ let package = Package(
             name: "Consai",
             dependencies: ["ConsaiCore"],
             path: "App",
-            exclude: ["Info.plist", "Consai.entitlements"]
+            exclude: ["Info.plist", "Consai.entitlements", "Resources"]
         ),
         .testTarget(
             name: "ConsaiCoreTests",

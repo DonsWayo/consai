@@ -19,6 +19,7 @@ rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN" "$APP/Contents/MacOS/Consai"
 cp "$ROOT/App/Info.plist" "$APP/Contents/Info.plist"
+[ -f "$ROOT/App/Resources/AppIcon.icns" ] && cp "$ROOT/App/Resources/AppIcon.icns" "$APP/Contents/Resources/AppIcon.icns"
 
 # Ad-hoc sign so Gatekeeper/launch accepts it locally (real releases: Developer ID + notarize).
 echo "▸ Ad-hoc signing…"

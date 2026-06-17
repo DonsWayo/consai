@@ -45,6 +45,7 @@ struct LogWindow: View {
             }
         }
         .frame(minWidth: 560, minHeight: 360)
+        .background(Theme.bg)
         .navigationTitle("Logs — \(containerID)")
         .onAppear {
             NSApp.activate(ignoringOtherApps: true)

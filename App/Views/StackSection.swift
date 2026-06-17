@@ -46,7 +46,7 @@ struct StackSection: View {
             } else if hovering {
                 actions
             } else {
-                Text("\(stack.runningCount) of \(max(stack.total, stack.runningCount))")
+                Text("\(stack.runningCount) of \(max(stack.total, stack.runningCount))\(memSuffix)")
                     .font(Theme.mono(11)).foregroundStyle(Theme.dim)
             }
         }
@@ -56,6 +56,11 @@ struct StackSection: View {
     }
 
     private var leafColor: Color { allRunning ? Theme.jade : (stack.runningCount > 0 ? Theme.amber : Theme.stopDot) }
+
+    private var memSuffix: String {
+        let total = stack.services.compactMap(\.memoryBytes).reduce(0, +)
+        return total > 0 ? " · \(formatBytes(total))" : ""
+    }
 
     private var branch: some View {
         HStack(alignment: .top, spacing: 0) {

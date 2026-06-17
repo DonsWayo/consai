@@ -21,11 +21,12 @@ enum ShotRenderer {
         let store = RegistryStore(directory: regDir)
         try? store.save(registry)
 
+        let mb: (Int) -> UInt64 = { UInt64($0) * 1_048_576 }
         let containers = [
-            Container(id: "shop-web", name: "shop-web", image: "docker.io/library/nginx:latest", status: .running, ipAddress: "10.0.1.4"),
-            Container(id: "shop-api", name: "shop-api", image: "ghcr.io/acme/api:1.4", status: .running, ipAddress: "10.0.1.5"),
-            Container(id: "shop-db", name: "shop-db", image: "postgres:17", status: .running, ipAddress: "10.0.1.6"),
-            Container(id: "conek-pg", name: "conek-pg", image: "ghcr.io/a-safe-digital/postgres-pgvector:pg17", status: .running, ipAddress: "192.168.64.2"),
+            Container(id: "shop-web", name: "shop-web", image: "docker.io/library/nginx:latest", status: .running, ipAddress: "10.0.1.4", memoryBytes: mb(38)),
+            Container(id: "shop-api", name: "shop-api", image: "ghcr.io/acme/api:1.4", status: .running, ipAddress: "10.0.1.5", memoryBytes: mb(196)),
+            Container(id: "shop-db", name: "shop-db", image: "postgres:17", status: .running, ipAddress: "10.0.1.6", memoryBytes: mb(178)),
+            Container(id: "cache", name: "cache", image: "docker.io/library/redis:7", status: .running, ipAddress: "192.168.64.2", memoryBytes: mb(24)),
             Container(id: "scratch", name: "scratch", image: "docker.io/library/alpine:latest", status: .stopped),
         ]
         let state = AppState(
