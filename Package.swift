@@ -62,5 +62,9 @@ let package = Package(
         // Native-Swift icon builder (replaces scripts/make-icon.sh): `swift run icon` renders the
         // icon and writes App/Resources/AppIcon.icns.
         .executableTarget(name: "icon", path: "Tools/icon"),
+        // Release signing: Developer ID codesign + notarize (notarytool) + staple + DMG.
+        // Set CONSAI_IDENTITY / CONSAI_TEAM_ID / CONSAI_APPLE_ID / CONSAI_APP_PWD, then:
+        //   swift run bundle && swift run sign
+        .executableTarget(name: "sign", path: "Tools/sign"),
     ]
 )
