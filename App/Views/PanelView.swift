@@ -3,11 +3,23 @@ import ConsaiCore
 import ConsaiKit
 import AppKit
 
+/// Carries the scrollable list's natural height up so the panel can size to it.
+private struct ListHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
+}
+
 /// The menu bar panel — Bonsai look: mark + wordmark, leaf-marked stacks on branches,
 /// standalone containers, a tend-the-garden footer.
 struct PanelView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openWindow) private var openWindow
+
+    /// Natural height of the scrollable list, measured so the menu-bar window can size to its
+    /// content instead of collapsing the ScrollView to ~0pt (MenuBarExtra sizes to ideal size).
+    @State private var listHeight: CGFloat = 220
+    private let listCap: CGFloat = 460     // scroll past this; never grow taller
+    private let listFloor: CGFloat = 80    // a single row shouldn't look cramped
 
     var body: some View {
         VStack(spacing: 0) {
@@ -27,7 +39,6 @@ struct PanelView: View {
             footer
         }
         .frame(width: Theme.panelWidth)
-        .frame(maxHeight: 560)
         .background(Theme.bg)
         .preferredColorScheme(.dark)
         .tint(Theme.jade)
@@ -84,7 +95,15 @@ struct PanelView: View {
                     if !appState.composeAvailable { composeHint }
                 }
                 .padding(.bottom, 6)
+                .background(GeometryReader { g in
+                    Color.clear.preference(key: ListHeightKey.self, value: g.size.height)
+                })
             }
+            // Size the panel to the list's natural height (floored so one row isn't cramped,
+            // capped so long lists scroll) — without this the ScrollView collapses to ~0pt in
+            // the self-sizing MenuBarExtra window and the rows become invisible.
+            .frame(height: min(max(listHeight, listFloor), listCap))
+            .onPreferenceChange(ListHeightKey.self) { listHeight = $0 }
         }
     }
 
