@@ -3,25 +3,31 @@ import Observation
 import ConsaiCore
 
 /// The single source of truth for the UI. Owns the engines, polls for container/service
-/// state, and applies optimistic updates on actions. All UI renders from here.
+/// state, folds containers into stacks, and applies optimistic updates on actions.
 @MainActor
 @Observable
 final class AppState {
     private(set) var containers: [Container] = []
+    private(set) var stacks: [Stack] = []
+    private(set) var standalone: [Container] = []
     private(set) var serviceStatus: ServiceStatus = .unknown
-    /// Container ids with an action currently in flight (drives row spinners / disabling).
+    /// Container ids / project names with an action in flight (drives spinners / disabling).
     private(set) var inFlight: Set<String> = []
     var lastError: String?
 
     private let containerEngine: ContainerEngine
+    private let composeEngine: ComposeEngine
     private let serviceHealth: ServiceHealthChecking
+    private let store: RegistryStore
+    private var registry: ProjectRegistry
     private var pollTask: Task<Void, Never>?
     private var panelVisible = false
 
     var runningCount: Int { containers.filter { $0.status == .running }.count }
     var isServiceRunning: Bool { serviceStatus == .running }
+    var composeAvailable: Bool { composeEngine.isAvailable }
+    var recentComposeFiles: [URL] { registry.recentComposeFiles }
 
-    /// Menu bar icon reflects service health at a glance.
     var menuBarSymbol: String {
         switch serviceStatus {
         case .running: return "shippingbox.fill"
@@ -32,10 +38,15 @@ final class AppState {
 
     init(
         containerEngine: ContainerEngine = SDKContainerEngine(),
-        serviceHealth: ServiceHealthChecking = CLIServiceHealth()
+        composeEngine: ComposeEngine = CLIComposeEngine(),
+        serviceHealth: ServiceHealthChecking = CLIServiceHealth(),
+        store: RegistryStore = RegistryStore()
     ) {
         self.containerEngine = containerEngine
+        self.composeEngine = composeEngine
         self.serviceHealth = serviceHealth
+        self.store = store
+        self.registry = store.load()
         startPolling()
     }
 
@@ -57,7 +68,6 @@ final class AppState {
         pollTask = nil
     }
 
-    /// Called by the panel on appear/disappear to switch poll cadence and refresh promptly.
     func setPanelVisible(_ visible: Bool) {
         panelVisible = visible
         if visible { Task { await refresh() } }
@@ -66,17 +76,26 @@ final class AppState {
     func refresh() async {
         serviceStatus = await serviceHealth.status()
         guard serviceStatus == .running else {
-            containers = []   // can't list while the service is down
+            containers = []
+            reassemble()
             return
         }
         do {
             containers = try await containerEngine.list()
+            reassemble()
         } catch {
             lastError = describe(error)
         }
     }
 
-    // MARK: - Actions
+    /// Recompute stacks + standalone from the current container list and known projects.
+    private func reassemble() {
+        let result = registry.assemble(containers: containers)
+        stacks = result.stacks
+        standalone = result.standalone
+    }
+
+    // MARK: - Container actions
 
     func start(_ id: String) async { await act(id, optimistic: .starting) { try await self.containerEngine.start(id: id) } }
     func stop(_ id: String) async { await act(id, optimistic: .stopping) { try await self.containerEngine.stop(id: id) } }
@@ -93,6 +112,52 @@ final class AppState {
         }
     }
 
+    // MARK: - Stack actions
+
+    /// Bring a compose stack up. Records the project so future polls group it as known.
+    func composeUp(file: URL) async {
+        let project = Self.projectName(for: file)
+        inFlight.insert(project)
+        defer { inFlight.remove(project) }
+        do {
+            try await composeEngine.up(file: file)
+            registry.record(project: project, composeFile: file)
+            persist()
+            await refresh()
+        } catch {
+            lastError = describe(error)
+        }
+    }
+
+    /// Bring a known stack down. Gated on a linked compose file — never guesses.
+    func composeDown(_ stack: Stack) async {
+        guard let path = stack.composeFilePath else {
+            lastError = "No compose file linked for \(stack.projectName). Link one first."
+            return
+        }
+        inFlight.insert(stack.projectName)
+        defer { inFlight.remove(stack.projectName) }
+        do {
+            try await composeEngine.down(file: URL(fileURLWithPath: path))
+            await refresh()
+        } catch {
+            lastError = describe(error)
+        }
+    }
+
+    /// Promote an inferred stack to known by pointing it at its compose file.
+    func linkComposeFile(project: String, file: URL) {
+        registry.record(project: project, composeFile: file)
+        persist()
+        reassemble()
+    }
+
+    func forgetStack(_ project: String) {
+        registry.remove(project: project)
+        persist()
+        reassemble()
+    }
+
     func startService() async {
         do {
             try await serviceHealth.start()
@@ -104,12 +169,13 @@ final class AppState {
 
     func clearError() { lastError = nil }
 
-    /// Run an action with an optimistic local status, reverting via refresh on success or
-    /// failure (the next list is authoritative either way).
+    // MARK: - Helpers
+
     private func act(_ id: String, optimistic: ContainerStatus, _ op: @escaping () async throws -> Void) async {
         inFlight.insert(id)
         if let idx = containers.firstIndex(where: { $0.id == id }) {
             containers[idx].status = optimistic
+            reassemble()
         }
         defer { inFlight.remove(id) }
         do {
@@ -118,6 +184,15 @@ final class AppState {
             lastError = describe(error)
         }
         await refresh()
+    }
+
+    private func persist() { try? store.save(registry) }
+
+    /// Project name follows `container-compose`'s rule: the compose file's directory name.
+    /// (`container-compose` also honors a `name:` field; we approximate with the dir name,
+    /// which is its fallback and the common case.)
+    static func projectName(for composeFile: URL) -> String {
+        composeFile.deletingLastPathComponent().lastPathComponent
     }
 
     private func describe(_ error: Error) -> String {
