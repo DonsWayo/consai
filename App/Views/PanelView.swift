@@ -136,6 +136,7 @@ struct PanelView: View {
             // Browse
             footerButton("photo.stack", nil, help: "Images") { openWindow(id: "images") }
             footerButton("network", nil, help: "Networks & volumes") { openWindow(id: "infra") }
+            footerButton("doc.text.below.ecg", nil, help: "Multi-log viewer") { openWindow(id: "multi-logs") }
             Spacer(minLength: 8)
             // Utility
             footerButton("arrow.clockwise", nil, help: "Refresh") { Task { await appState.refresh() } }

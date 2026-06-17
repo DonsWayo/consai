@@ -96,5 +96,10 @@ struct ConsaiApp: App {
                 .environment(appState)
         }
         .defaultSize(width: 480, height: 420)
+
+        Window("Multi-log", id: "multi-logs") {
+            MultiLogWindow().environment(appState)
+        }
+        .defaultSize(width: 900, height: 500)
     }
 }
