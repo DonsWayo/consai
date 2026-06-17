@@ -1,5 +1,6 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 import AppKit
 
 /// Settings: container system service control, compose availability, poll cadence.

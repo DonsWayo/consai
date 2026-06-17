@@ -26,10 +26,16 @@ let package = Package(
             ],
             path: "ConsaiCore/Sources/ConsaiCore"
         ),
+        // App orchestration (AppState + mocks + shell launcher) — UI-free, so it is unit-testable.
+        .target(
+            name: "ConsaiKit",
+            dependencies: ["ConsaiCore"],
+            path: "ConsaiKit/Sources/ConsaiKit"
+        ),
         // The menu bar app (SwiftUI). Bundled into Consai.app by scripts/bundle.sh.
         .executableTarget(
             name: "Consai",
-            dependencies: ["ConsaiCore"],
+            dependencies: ["ConsaiCore", "ConsaiKit"],
             path: "App",
             exclude: ["Info.plist", "Consai.entitlements", "Resources"]
         ),
@@ -37,6 +43,11 @@ let package = Package(
             name: "ConsaiCoreTests",
             dependencies: ["ConsaiCore"],
             path: "ConsaiCore/Tests/ConsaiCoreTests"
+        ),
+        .testTarget(
+            name: "ConsaiKitTests",
+            dependencies: ["ConsaiKit", "ConsaiCore"],
+            path: "ConsaiKit/Tests/ConsaiKitTests"
         ),
     ]
 )

@@ -1,5 +1,6 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 import AppKit
 
 /// Networks & volumes: list, create by name, delete.

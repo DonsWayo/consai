@@ -1,4 +1,5 @@
 import SwiftUI
+import ConsaiKit
 
 /// Shown when the `container` system service is not running.
 struct ServiceBanner: View {

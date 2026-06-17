@@ -1,5 +1,6 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 
 /// The menu bar panel — Bonsai look: mark + wordmark, leaf-marked stacks on branches,
 /// standalone containers, a tend-the-garden footer.

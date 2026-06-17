@@ -1,4 +1,5 @@
 import SwiftUI
+import ConsaiKit
 import AppKit
 
 /// Entry point. `--render-shots <dir>` renders UI screenshots and exits; otherwise the
