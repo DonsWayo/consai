@@ -93,6 +93,9 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
         #expect(CLIContainerCreator.tokenize("echo 'a b'  c") == ["echo", "a b", "c"])
         #expect(CLIContainerCreator.tokenize(#"a\ b c"#) == ["a b", "c"])
         #expect(CLIContainerCreator.tokenize("plain command here") == ["plain", "command", "here"])
+        // Dangling backslash → literal, no spurious empty trailing token.
+        #expect(CLIContainerCreator.tokenize(#"a b\"#) == ["a", "b\\"])
+        #expect(CLIContainerCreator.tokenize("") == [])
     }
 }
 

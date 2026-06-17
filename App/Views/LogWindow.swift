@@ -37,7 +37,9 @@ struct LogWindow: View {
                     }
                     .padding(8)
                 }
-                .onChange(of: visibleLines.count) { _, _ in
+                // Key off the last line's monotonic id (not count) so autoscroll keeps
+                // working after the 5000-line cap, where count stops changing.
+                .onChange(of: visibleLines.last?.id) { _, _ in
                     if autoscroll { proxy.scrollTo("bottom", anchor: .bottom) }
                 }
             }

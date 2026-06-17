@@ -217,12 +217,14 @@ final class AppState {
             containers[idx].status = optimistic
             reassemble()
         }
-        defer { inFlight.remove(id) }
         do {
             try await op()
         } catch {
             lastError = describe(error)
         }
+        // Clear in-flight BEFORE the reconciling refresh, so the refresh shows the real
+        // post-action status instead of preserving the now-stale optimistic value.
+        inFlight.remove(id)
         await refresh()
     }
 
@@ -252,10 +254,22 @@ final class AppState {
         for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
             guard let first = line.first, first != " ", first != "\t" else { continue } // top-level only
             guard let range = line.range(of: #"^name:\s*"#, options: .regularExpression) else { continue }
-            var value = String(line[range.upperBound...])
-            if let comment = value.firstIndex(of: "#") { value = String(value[..<comment]) }
-            value = value.trimmingCharacters(in: .whitespaces)
-                .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            var value = String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces)
+            if let quote = value.first, quote == "\"" || quote == "'" {
+                // Quoted scalar: take inner content verbatim ('#' inside is not a comment).
+                let inner = value.dropFirst()
+                if let close = inner.firstIndex(of: quote) {
+                    value = String(inner[..<close])
+                } else {
+                    value = String(inner)
+                }
+            } else {
+                // Unquoted: a comment starts only at whitespace-then-'#'.
+                if let comment = value.range(of: #"\s#"#, options: .regularExpression) {
+                    value = String(value[..<comment.lowerBound])
+                }
+                value = value.trimmingCharacters(in: .whitespaces)
+            }
             if !value.isEmpty { return value }
         }
         return nil

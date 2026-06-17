@@ -85,6 +85,7 @@ public struct CLIContainerCreator: ContainerCreating {
                 current.append(ch); hasToken = true
             }
         }
+        if escaped { current.append("\\") }   // dangling backslash → literal, no empty token
         if hasToken { tokens.append(current) }
         return tokens
     }

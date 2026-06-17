@@ -39,14 +39,17 @@ public struct SystemProcessRunner: ProcessRunning {
                 process.standardOutput = outPipe
                 process.standardError = errPipe
 
-                // `nonisolated(unsafe)`: these are mutated on the concurrent read queues but
-                // only read after `group.wait()`, which establishes the happens-before barrier.
+                // `nonisolated(unsafe)`: outData/errData are written on the read queues and
+                // read only after `group.wait()` (the happens-before barrier); the timeout
+                // flags are guarded by `stateLock`.
                 nonisolated(unsafe) let outHandle = outPipe.fileHandleForReading
                 nonisolated(unsafe) let errHandle = errPipe.fileHandleForReading
                 nonisolated(unsafe) var outData = Data()
                 nonisolated(unsafe) var errData = Data()
                 nonisolated(unsafe) let proc = process
-                nonisolated(unsafe) var didTimeOut = false
+                let stateLock = NSLock()
+                nonisolated(unsafe) var didTimeOut = false   // guarded by stateLock
+                nonisolated(unsafe) var completed = false    // guarded by stateLock
 
                 do {
                     try process.run()
@@ -65,16 +68,28 @@ public struct SystemProcessRunner: ProcessRunning {
                 readQueue.async { errData = errHandle.readDataToEndOfFile(); group.leave() }
 
                 // Watchdog: terminate a hung child so an action can never block forever.
+                // It only fires if normal completion hasn't been claimed first — `cancel()`
+                // can't stop an already-started block, so the lock decides the winner.
                 let watchdog = DispatchWorkItem {
-                    if proc.isRunning { didTimeOut = true; proc.terminate() }
+                    stateLock.lock()
+                    let shouldTerminate = !completed
+                    if shouldTerminate { didTimeOut = true }
+                    stateLock.unlock()
+                    if shouldTerminate { proc.terminate() }   // terminate outside the lock
                 }
                 DispatchQueue.global().asyncAfter(deadline: .now() + timeout, execute: watchdog)
 
                 process.waitUntilExit()
                 watchdog.cancel()
+                // Claim normal completion unless the watchdog already won; read the flag
+                // under the same lock so there's a real happens-before edge.
+                stateLock.lock()
+                if !didTimeOut { completed = true }
+                let timedOut = didTimeOut
+                stateLock.unlock()
                 group.wait()
 
-                if didTimeOut {
+                if timedOut {
                     continuation.resume(throwing: ConsaiError.processFailed(
                         stderr: "Command timed out after \(Int(timeout))s"))
                     return
