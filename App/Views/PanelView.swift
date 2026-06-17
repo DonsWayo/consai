@@ -39,7 +39,9 @@ struct PanelView: View {
             footer
         }
         .frame(width: Theme.panelWidth)
-        .background(Theme.bg)
+        .background(
+            LinearGradient(colors: [Theme.bgTop, Theme.bg], startPoint: .top, endPoint: .bottom)
+        )
         .preferredColorScheme(.dark)
         .tint(Theme.jade)
         .onAppear { appState.setPanelVisible(true) }
@@ -89,7 +91,7 @@ struct PanelView: View {
                         sectionLabel("CONTAINERS")
                         ForEach(appState.standalone) { container in
                             ContainerRow(container: container)
-                                .padding(.horizontal, 18)
+                                .padding(.horizontal, 12)
                         }
                     }
                     if !appState.composeAvailable { composeHint }
