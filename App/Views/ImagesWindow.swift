@@ -1,5 +1,6 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 import AppKit
 
 /// Browse local images, pull by reference, delete.

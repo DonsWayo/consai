@@ -1,5 +1,6 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 import AppKit
 
 /// Form to create + run a new container (`container run -d …`).

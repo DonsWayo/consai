@@ -4,20 +4,23 @@ import ConsaiCore
 
 /// The single source of truth for the UI. Owns the engines, polls for container/service
 /// state, folds containers into stacks, and applies optimistic updates on actions.
+///
+/// Lives in `ConsaiKit` (not the app executable) so its orchestration logic is unit-testable
+/// with injected mock engines.
 @MainActor
 @Observable
-final class AppState {
-    private(set) var containers: [Container] = []
-    private(set) var stacks: [Stack] = []
-    private(set) var standalone: [Container] = []
-    private(set) var serviceStatus: ServiceStatus = .unknown
+public final class AppState {
+    public private(set) var containers: [Container] = []
+    public private(set) var stacks: [Stack] = []
+    public private(set) var standalone: [Container] = []
+    public private(set) var serviceStatus: ServiceStatus = .unknown
     /// Container ids / project names with an action in flight (drives spinners / disabling).
-    private(set) var inFlight: Set<String> = []
-    var lastError: String?
+    public private(set) var inFlight: Set<String> = []
+    public var lastError: String?
 
-    private(set) var images: [ContainerImage] = []
-    private(set) var networks: [ContainerNetwork] = []
-    private(set) var volumes: [ContainerVolume] = []
+    public private(set) var images: [ContainerImage] = []
+    public private(set) var networks: [ContainerNetwork] = []
+    public private(set) var volumes: [ContainerVolume] = []
 
     private let containerEngine: ContainerEngine
     private let composeEngine: ComposeEngine
@@ -31,12 +34,12 @@ final class AppState {
     private var panelVisible = false
     private var sampler = VitalsSampler()
 
-    var runningCount: Int { containers.filter { $0.status == .running }.count }
-    var isServiceRunning: Bool { serviceStatus == .running }
-    var composeAvailable: Bool { composeEngine.isAvailable }
-    var recentComposeFiles: [URL] { registry.recentComposeFiles }
+    public var runningCount: Int { containers.filter { $0.status == .running }.count }
+    public var isServiceRunning: Bool { serviceStatus == .running }
+    public var composeAvailable: Bool { composeEngine.isAvailable }
+    public var recentComposeFiles: [URL] { registry.recentComposeFiles }
 
-    var menuBarSymbol: String {
+    public var menuBarSymbol: String {
         switch serviceStatus {
         case .running: return "leaf.fill"
         case .stopped: return "exclamationmark.triangle.fill"
@@ -45,19 +48,21 @@ final class AppState {
     }
 
     /// A user-configured binary path from settings, or nil to auto-detect (empty = auto).
-    static func storedPath(_ key: String) -> String? {
+    public static func storedPath(_ key: String) -> String? {
         let value = UserDefaults.standard.string(forKey: key)
         return (value?.isEmpty == false) ? value : nil
     }
 
-    init(
+    /// - Parameter autostart: begin polling on init (false in tests for deterministic control).
+    public init(
         containerEngine: ContainerEngine = SDKContainerEngine(),
         composeEngine: ComposeEngine = CLIComposeEngine(binaryPath: AppState.storedPath("composeBinaryPath")),
         serviceHealth: ServiceHealthChecking = CLIServiceHealth(binaryPath: AppState.storedPath("containerBinaryPath")),
         creator: ContainerCreating = CLIContainerCreator(binaryPath: AppState.storedPath("containerBinaryPath")),
         imageEngine: ImageEngine = SDKImageEngine(binaryPath: AppState.storedPath("containerBinaryPath")),
         infraEngine: InfraEngine = SDKInfraEngine(binaryPath: AppState.storedPath("containerBinaryPath")),
-        store: RegistryStore = RegistryStore()
+        store: RegistryStore = RegistryStore(),
+        autostart: Bool = true
     ) {
         self.containerEngine = containerEngine
         self.composeEngine = composeEngine
@@ -67,12 +72,12 @@ final class AppState {
         self.infraEngine = infraEngine
         self.store = store
         self.registry = store.load()
-        startPolling()
+        if autostart { startPolling() }
     }
 
     // MARK: - Polling
 
-    func startPolling() {
+    public func startPolling() {
         guard pollTask == nil else { return }
         pollTask = Task { [weak self] in
             while !Task.isCancelled {
@@ -86,17 +91,17 @@ final class AppState {
         }
     }
 
-    func stopPolling() {
+    public func stopPolling() {
         pollTask?.cancel()
         pollTask = nil
     }
 
-    func setPanelVisible(_ visible: Bool) {
+    public func setPanelVisible(_ visible: Bool) {
         panelVisible = visible
         if visible { Task { await refresh() } }
     }
 
-    func refresh() async {
+    public func refresh() async {
         serviceStatus = await serviceHealth.status()
         // Only a definite "stopped" clears the list. On `.unknown` we still try to list
         // (the status wording just wasn't recognized); a real failure surfaces as an error.
@@ -107,10 +112,8 @@ final class AppState {
         }
         do {
             let fresh = try await containerEngine.list()
-            // Preserve an in-flight container's optimistic status so a poll mid-action
-            // doesn't flicker it back to the pre-action state. Carry over last-known memory
-            // so vitals don't blink to empty between fetches.
-            // Carry last-known vitals so they don't blink to empty between fetches.
+            // Preserve an in-flight container's optimistic status so a poll mid-action doesn't
+            // flicker it back, and carry last-known vitals so they don't blink between fetches.
             let priorMemory = Dictionary(containers.map { ($0.id, $0.memoryBytes) }, uniquingKeysWith: { a, _ in a })
             let priorCPU = Dictionary(containers.map { ($0.id, $0.cpuPercent) }, uniquingKeysWith: { a, _ in a })
             containers = fresh.map { incoming in
@@ -170,11 +173,11 @@ final class AppState {
 
     // MARK: - Container actions
 
-    func start(_ id: String) async { await act(id, optimistic: .starting) { try await self.containerEngine.start(id: id) } }
-    func stop(_ id: String) async { await act(id, optimistic: .stopping) { try await self.containerEngine.stop(id: id) } }
-    func restart(_ id: String) async { await act(id, optimistic: .starting) { try await self.containerEngine.restart(id: id) } }
+    public func start(_ id: String) async { await act(id, optimistic: .starting) { try await self.containerEngine.start(id: id) } }
+    public func stop(_ id: String) async { await act(id, optimistic: .stopping) { try await self.containerEngine.stop(id: id) } }
+    public func restart(_ id: String) async { await act(id, optimistic: .starting) { try await self.containerEngine.restart(id: id) } }
 
-    func delete(_ id: String) async {
+    public func delete(_ id: String) async {
         inFlight.insert(id)
         defer { inFlight.remove(id) }
         do {
@@ -188,7 +191,7 @@ final class AppState {
     // MARK: - Stack actions
 
     /// Bring a compose stack up. Records the project so future polls group it as known.
-    func composeUp(file: URL) async {
+    public func composeUp(file: URL) async {
         let project = Self.projectName(for: file)
         inFlight.insert(project)
         defer { inFlight.remove(project) }
@@ -203,7 +206,7 @@ final class AppState {
     }
 
     /// Bring a known stack down. Gated on a linked compose file — never guesses.
-    func composeDown(_ stack: Stack) async {
+    public func composeDown(_ stack: Stack) async {
         guard let path = stack.composeFilePath else {
             lastError = "No compose file linked for \(stack.projectName). Link one first."
             return
@@ -219,19 +222,19 @@ final class AppState {
     }
 
     /// Promote an inferred stack to known by pointing it at its compose file.
-    func linkComposeFile(project: String, file: URL) {
+    public func linkComposeFile(project: String, file: URL) {
         registry.record(project: project, composeFile: file)
         persist()
         reassemble()
     }
 
-    func forgetStack(_ project: String) {
+    public func forgetStack(_ project: String) {
         registry.remove(project: project)
         persist()
         reassemble()
     }
 
-    func startService() async {
+    public func startService() async {
         do {
             try await serviceHealth.start()
             await refresh()
@@ -240,7 +243,7 @@ final class AppState {
         }
     }
 
-    func stopService() async {
+    public func stopService() async {
         do {
             try await serviceHealth.stop()
             await refresh()
@@ -250,7 +253,7 @@ final class AppState {
     }
 
     /// Create + run a new container. Returns true on success (so the window can close).
-    func create(_ spec: NewContainerSpec) async -> Bool {
+    public func create(_ spec: NewContainerSpec) async -> Bool {
         do {
             try await creator.create(spec)
             await refresh()
@@ -261,17 +264,17 @@ final class AppState {
         }
     }
 
-    func clearError() { lastError = nil }
+    public func clearError() { lastError = nil }
 
     // MARK: - Images
 
-    func loadImages() async {
+    public func loadImages() async {
         do { images = try await imageEngine.list() }
         catch { lastError = describe(error) }
     }
 
     /// Pull an image; returns true on success. Refreshes the image list.
-    func pullImage(_ reference: String) async -> Bool {
+    public func pullImage(_ reference: String) async -> Bool {
         do {
             try await imageEngine.pull(reference: reference)
             await loadImages()
@@ -282,7 +285,7 @@ final class AppState {
         }
     }
 
-    func deleteImage(_ reference: String) async {
+    public func deleteImage(_ reference: String) async {
         do {
             try await imageEngine.delete(reference: reference)
             await loadImages()
@@ -293,20 +296,20 @@ final class AppState {
 
     // MARK: - Container detail / exec
 
-    func detail(_ id: String) async -> ContainerDetail? {
+    public func detail(_ id: String) async -> ContainerDetail? {
         do { return try await containerEngine.detail(id: id) }
         catch { lastError = describe(error); return nil }
     }
 
     /// Open an interactive shell into the container in Terminal.
-    func execShell(_ id: String) {
+    public func execShell(_ id: String) {
         let binary = AppState.storedPath("containerBinaryPath") ?? "/usr/local/bin/container"
         ContainerShell.openShell(binaryPath: binary, id: id)
     }
 
     // MARK: - Networks & volumes
 
-    func loadInfra() async {
+    public func loadInfra() async {
         do {
             async let n = infraEngine.listNetworks()
             async let v = infraEngine.listVolumes()
@@ -317,10 +320,10 @@ final class AppState {
         }
     }
 
-    func createNetwork(_ name: String) async { await infraOp { try await self.infraEngine.createNetwork(name: name) } }
-    func deleteNetwork(_ id: String) async { await infraOp { try await self.infraEngine.deleteNetwork(id: id) } }
-    func createVolume(_ name: String) async { await infraOp { try await self.infraEngine.createVolume(name: name) } }
-    func deleteVolume(_ name: String) async { await infraOp { try await self.infraEngine.deleteVolume(name: name) } }
+    public func createNetwork(_ name: String) async { await infraOp { try await self.infraEngine.createNetwork(name: name) } }
+    public func deleteNetwork(_ id: String) async { await infraOp { try await self.infraEngine.deleteNetwork(id: id) } }
+    public func createVolume(_ name: String) async { await infraOp { try await self.infraEngine.createVolume(name: name) } }
+    public func deleteVolume(_ name: String) async { await infraOp { try await self.infraEngine.deleteVolume(name: name) } }
 
     private func infraOp(_ op: @escaping () async throws -> Void) async {
         do { try await op(); await loadInfra() }
@@ -354,27 +357,25 @@ final class AppState {
         }
     }
 
-    /// Project name, matching `container-compose`: the compose file's top-level `name:`
-    /// field if present, else the directory name — with `.`→`_` sanitization either way
-    /// (so `~/my.app/compose.yml` groups as `my_app-<service>`).
-    static func projectName(for composeFile: URL) -> String {
+    /// Project name, matching `container-compose`: the compose file's top-level `name:` field
+    /// if present, else the directory name — with `.`→`_` sanitization either way.
+    public static func projectName(for composeFile: URL) -> String {
         if let explicit = composeProjectName(in: composeFile) { return sanitizeProjectName(explicit) }
         return sanitizeProjectName(composeFile.deletingLastPathComponent().lastPathComponent)
     }
 
-    static func sanitizeProjectName(_ name: String) -> String {
+    public static func sanitizeProjectName(_ name: String) -> String {
         name.replacingOccurrences(of: ".", with: "_")
     }
 
     /// Best-effort scan for a top-level `name:` key in a compose file.
-    static func composeProjectName(in file: URL) -> String? {
+    public static func composeProjectName(in file: URL) -> String? {
         guard let text = try? String(contentsOf: file, encoding: .utf8) else { return nil }
         for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
             guard let first = line.first, first != " ", first != "\t" else { continue } // top-level only
             guard let range = line.range(of: #"^name:\s*"#, options: .regularExpression) else { continue }
             var value = String(line[range.upperBound...]).trimmingCharacters(in: .whitespaces)
             if let quote = value.first, quote == "\"" || quote == "'" {
-                // Quoted scalar: take inner content verbatim ('#' inside is not a comment).
                 let inner = value.dropFirst()
                 if let close = inner.firstIndex(of: quote) {
                     value = String(inner[..<close])
@@ -382,7 +383,6 @@ final class AppState {
                     value = String(inner)
                 }
             } else {
-                // Unquoted: a comment starts only at whitespace-then-'#'.
                 if let comment = value.range(of: #"\s#"#, options: .regularExpression) {
                     value = String(value[..<comment.lowerBound])
                 }

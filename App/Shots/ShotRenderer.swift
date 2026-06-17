@@ -1,6 +1,7 @@
 import SwiftUI
 import AppKit
 import ConsaiCore
+import ConsaiKit
 
 /// Screenshot harness for the `--render-shots <dir>` entry mode. Hosts the REAL SwiftUI
 /// views in real NSWindows backed by the REAL AppState (live daemon data), then captures

@@ -1,5 +1,6 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 
 /// One container row (used standalone and inside a stack branch): living dot, name + image,
 /// and IP/state vitals on the right; hover reveals quick actions.

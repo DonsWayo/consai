@@ -1,5 +1,6 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 import AppKit
 
 /// A compose stack as a "plant": a leaf-marked header whose services hang off a branch.
