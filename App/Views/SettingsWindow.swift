@@ -7,6 +7,7 @@ struct SettingsWindow: View {
     @Environment(AppState.self) private var appState
     @AppStorage("pollOpen") private var pollOpen = 2.0
     @AppStorage("pollClosed") private var pollClosed = 15.0
+    @AppStorage("groupByNamePrefix") private var groupByNamePrefix = false
     @State private var working = false
 
     var body: some View {
@@ -36,6 +37,12 @@ struct SettingsWindow: View {
                     Text("Install with: brew install container-compose")
                         .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 }
+            }
+
+            Section("Stacks") {
+                Toggle("Group external containers by name prefix", isOn: $groupByNamePrefix)
+                Text("Off: only stacks you launch through Consai are grouped (reliable). On: containers that share a `name-` prefix are grouped as inferred stacks — can mis-group unrelated containers.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
 
             Section("Refresh cadence") {

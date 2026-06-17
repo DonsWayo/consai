@@ -45,7 +45,16 @@ public struct ProjectRegistry: Codable, Sendable, Equatable {
     // MARK: - Assembly
 
     /// Fold containers into stacks + standalone leftovers.
-    public func assemble(containers: [Container]) -> (stacks: [Stack], standalone: [Container]) {
+    ///
+    /// - Parameter inferStacks: when true, containers Consai didn't launch are grouped by
+    ///   `<project>-<service>` name prefix (best-effort, marked `.inferred`). This can
+    ///   over-group unrelated containers that merely share a prefix (e.g. `qa-web` + `qa-cache`),
+    ///   so it defaults to **false** — only Consai-launched stacks group reliably. Callers
+    ///   opt in via a user setting.
+    public func assemble(
+        containers: [Container],
+        inferStacks: Bool = false
+    ) -> (stacks: [Stack], standalone: [Container]) {
         var remaining = containers
         var stacks: [Stack] = []
 
@@ -64,29 +73,30 @@ public struct ProjectRegistry: Codable, Sendable, Equatable {
             )
         }
 
-        // 2. Inferred stacks: group leftovers by candidate prefix (before the last "-").
-        var byCandidate: [String: [Container]] = [:]
+        // 2. Inferred stacks (opt-in): group leftovers by candidate prefix (before the last
+        //    "-"). Off by default — see issue #12 — so unrelated containers sharing a prefix
+        //    aren't grouped into a fake stack.
         var standalone: [Container] = []
-        for container in remaining {
-            if let candidate = Self.inferredProject(from: container.name) {
-                byCandidate[candidate, default: []].append(container)
-            } else {
-                standalone.append(container)
+        if inferStacks {
+            var byCandidate: [String: [Container]] = [:]
+            for container in remaining {
+                if let candidate = Self.inferredProject(from: container.name) {
+                    byCandidate[candidate, default: []].append(container)
+                } else {
+                    standalone.append(container)
+                }
             }
-        }
-        for (candidate, members) in byCandidate {
-            if members.count >= 2 {
-                stacks.append(
-                    Stack(
-                        projectName: candidate,
-                        composeFilePath: nil,
-                        services: members,
-                        origin: .inferred
+            for (candidate, members) in byCandidate {
+                if members.count >= 2 {
+                    stacks.append(
+                        Stack(projectName: candidate, composeFilePath: nil, services: members, origin: .inferred)
                     )
-                )
-            } else {
-                standalone.append(contentsOf: members)
+                } else {
+                    standalone.append(contentsOf: members)
+                }
             }
+        } else {
+            standalone = remaining
         }
 
         // Stable ordering: stacks by name, standalone by name.

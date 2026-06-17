@@ -16,6 +16,15 @@ enum ConsaiEntry {
                 exit(0)
             }
             app.run()
+        } else if let i = args.firstIndex(of: "--render-live") {
+            let dir = URL(fileURLWithPath: i + 1 < args.count ? args[i + 1] : "shots")
+            let app = NSApplication.shared
+            app.setActivationPolicy(.accessory)
+            Task { @MainActor in
+                await ShotRenderer.renderLive(to: dir)
+                exit(0)
+            }
+            app.run()
         } else if let i = args.firstIndex(of: "--render-icon") {
             let out = URL(fileURLWithPath: i + 1 < args.count ? args[i + 1] : "icon.png")
             let app = NSApplication.shared
