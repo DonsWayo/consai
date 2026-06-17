@@ -55,6 +55,20 @@ import Foundation
         #expect(result.standalone.map(\.name).sorted() == ["qa-cache", "qa-web"])
     }
 
+    @Test func groupsByComposeProjectLabelEvenWithInferenceOff() {
+        let lbl = ProjectRegistry.composeProjectLabel
+        let labeledApi = Container(id: "1", name: "shop-api", image: "img", status: .running, labels: [lbl: "shop"])
+        let labeledWorker = Container(id: "2", name: "shop-worker", image: "img", status: .running, labels: [lbl: "shop"])
+        let result = ProjectRegistry().assemble(containers: [labeledApi, labeledWorker, c("3", "qa-web")])
+
+        #expect(result.stacks.count == 1)
+        let stack = try! #require(result.stacks.first)
+        #expect(stack.projectName == "shop")
+        #expect(stack.origin == .composeLabeled)
+        #expect(stack.services.count == 2)
+        #expect(result.standalone.map(\.name) == ["qa-web"])   // unlabeled stays standalone
+    }
+
     @Test func singleHyphenatedContainerIsNotAStack() {
         let result = ProjectRegistry().assemble(containers: [c("1", "alone-web")])
         #expect(result.stacks.isEmpty)
