@@ -20,16 +20,14 @@ See [`specs/`](specs/) (start with [`specs/00-design.md`](specs/00-design.md)).
 
 ## Build
 
+Consai builds with **SwiftPM** (not an `.xcodeproj` — see `CLAUDE.md` R11):
+
 ```bash
-brew install xcodegen        # or: mise use -g xcodegen
-xcodegen generate            # generates Consai.xcodeproj from project.yml
-open Consai.xcodeproj         # build & run in Xcode 26
-
-swift test                   # run ConsaiCore unit tests (no container needed)
-# (cd ConsaiCore && swift test)
+swift build                  # build the app
+scripts/bundle.sh            # build + assemble a runnable Consai.app, then: open Consai.app
+swift test                   # ConsaiCore unit tests (no container needed)
+open Package.swift           # Xcode GUI development (uses SwiftPM's build)
 ```
-
-The `.xcodeproj` is generated and git-ignored — `project.yml` is the source of truth.
 
 ## Architecture
 

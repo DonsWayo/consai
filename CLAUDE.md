@@ -27,16 +27,26 @@ full GUIs like Orchard. See [`specs/00-design.md`](specs/00-design.md) for the d
 
 ## Build / run
 
+**The project builds with SwiftPM, not an `.xcodeproj`** (see R11 — Xcode's `.xcodeproj`
+SwiftPM integration can't build the SDK's transitive package modules).
+
 ```bash
-# Generate the Xcode project from project.yml (after any structural change)
-xcodegen generate
+# Build the app
+swift build                      # debug; add -c release for release
 
-# Open + build/run in Xcode 26
-open Consai.xcodeproj
+# Build + assemble a runnable Consai.app (LSUIElement menu bar agent, ad-hoc signed)
+scripts/bundle.sh                # release by default; `scripts/bundle.sh debug` for debug
+open Consai.app
 
-# Run the pure core tests (no `container` needed)
-swift test            # in ConsaiCore, or via the scheme in Xcode
+# Run the unit tests (pure ConsaiCore logic; no `container` needed)
+swift test
+
+# GUI development in Xcode: open the package directly (uses the working SwiftPM build)
+open Package.swift               # do NOT generate/open an .xcodeproj
 ```
+
+> First build is slow: SwiftPM compiles the entire `apple/container` SDK graph from source
+> (BoringSSL, zstd, NIO, gRPC, ~3 min). It caches afterward — later builds are incremental.
 
 > The `.xcodeproj` is **generated** — do not hand-edit it. Change `project.yml` and re-run
 > `xcodegen generate`. Consider not committing the `.xcodeproj` (or committing it but
@@ -62,8 +72,10 @@ Read before building. These are the things most likely to bite.
 
 ### R1 — `apple/container` is a fast-moving, pre-stable SDK (HIGH)
 The SDK surface (`ContainerClient`, `ContainerSnapshot`, `ContainerCreateOptions`) can
-change between releases. **Mitigation:** pin the SPM dependency to an exact tag; isolate
-all SDK use in `SDKContainerEngine` + the mapping layer so breakage is contained to one file.
+change between releases. **Pinned to `0.12.3`** (exact) — Orchard's proven-in-Xcode graph.
+`1.0.0` pulls a pre-release `swift-distributed-tracing` Xcode can't build (see R11).
+Mitigation: isolate all SDK use in `SDKContainerEngine` + mapping so breakage is one file.
+Revisit moving to `1.0.0` once its transitive tracing dep ships a tagged, Xcode-buildable release.
 
 ### R2 — Stack grouping is by NAME PREFIX, not a label (HIGH)
 `container-compose` names containers `<project>-<service>` and does **not** stamp a project
@@ -108,6 +120,16 @@ rebuilding compose or a full GUI in v1.
 ### R9 — Non-sandboxed distribution friction (LOW)
 Outside the App Store → must code-sign (Developer ID) + notarize, or Gatekeeper blocks it.
 **Mitigation:** Wave 5 covers signing/notarization + a Homebrew cask; document the steps.
+
+### R11 — Build with SwiftPM, NOT an .xcodeproj (MEDIUM, build — resolved)
+Xcode 26.5's `.xcodeproj` SwiftPM integration cannot build this SDK's large transitive
+package graph: it fails to wire up transitive modules (`ServiceContextModule`, `SwiftASN1`,
+`Logging`, `SystemPackage`, …) and, with explicit modules, the C-library builtin `.pcm`s.
+Adding packages directly is unreliable whack-a-mole. **Resolution:** the project builds with
+**SwiftPM** (`Package.swift`) — the same build system that compiles the graph cleanly — and
+`scripts/bundle.sh` wraps the executable into `Consai.app`. Do **not** reintroduce XcodeGen /
+`.xcodeproj`; for Xcode GUI work, `open Package.swift`. (`apple/container` is also
+Apple-silicon-only — builds are arm64.)
 
 ### R10 — Destructive actions (LOW, but high blast radius)
 `delete` container and `down` stack remove resources. **Mitigation:** confirm on delete;

@@ -11,6 +11,8 @@ build/
 .swiftpm/
 Package.resolved
 
-# Generated Xcode project — project.yml is the source of truth.
-# Regenerate with: xcodegen generate
+# Built app bundle (produced by scripts/bundle.sh)
+Consai.app/
+
+# (Legacy) generated Xcode project — the project now builds with SwiftPM, not XcodeGen.
 Consai.xcodeproj/
