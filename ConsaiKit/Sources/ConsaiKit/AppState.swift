@@ -24,6 +24,11 @@ public final class AppState {
     public private(set) var networks: [ContainerNetwork] = []
     public private(set) var volumes: [ContainerVolume] = []
 
+    /// Non-nil when a newer version of `container` is available on GitHub.
+    public private(set) var containerUpdate: UpdateAvailability?
+    /// Non-nil when a newer version of `container-compose` is available on GitHub.
+    public private(set) var composeUpdate: UpdateAvailability?
+
     private let containerEngine: ContainerEngine
     private let composeEngine: ComposeEngine
     private let serviceHealth: ServiceHealthChecking
@@ -33,8 +38,10 @@ public final class AppState {
     private let store: RegistryStore
     private var registry: ProjectRegistry
     private var pollTask: Task<Void, Never>?
+    private var updateTask: Task<Void, Never>?
     private var panelVisible = false
     private var sampler = VitalsSampler()
+    private let updateChecker = UpdateChecker()
 
     public var runningCount: Int { containers.filter { $0.status == .running }.count }
     public var isServiceRunning: Bool { serviceStatus == .running }
@@ -74,7 +81,7 @@ public final class AppState {
         self.infraEngine = infraEngine
         self.store = store
         self.registry = store.load()
-        if autostart { startPolling() }
+        if autostart { startPolling(); startUpdateChecking() }
     }
 
     // MARK: - Polling
@@ -93,9 +100,35 @@ public final class AppState {
         }
     }
 
+    // MARK: - Update checking
+
+    /// Check for new releases on startup, then every 4 hours. Silently skips on network failure.
+    public func startUpdateChecking() {
+        guard updateTask == nil else { return }
+        updateTask = Task { [weak self] in
+            while !Task.isCancelled {
+                await self?.checkForUpdates()
+                try? await Task.sleep(for: .seconds(4 * 3600))
+            }
+        }
+    }
+
+    public func checkForUpdates() async {
+        let checker = updateChecker
+        let binaryPath = AppState.storedPath("containerBinaryPath")
+        let composePath = AppState.storedPath("composeBinaryPath")
+        async let cUpdate = checker.checkContainer(binaryPath: binaryPath)
+        async let qUpdate = checker.checkCompose(binaryPath: composePath)
+        let (c, q) = await (cUpdate, qUpdate)
+        containerUpdate = c?.hasUpdate == true ? c : nil
+        composeUpdate   = q?.hasUpdate == true ? q : nil
+    }
+
     public func stopPolling() {
         pollTask?.cancel()
         pollTask = nil
+        updateTask?.cancel()
+        updateTask = nil
     }
 
     public func setPanelVisible(_ visible: Bool) {
