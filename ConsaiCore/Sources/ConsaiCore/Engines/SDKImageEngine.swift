@@ -19,12 +19,35 @@ public struct SDKImageEngine: ImageEngine {
 
     public func list() async throws -> [ContainerImage] {
         do {
-            return try await ClientImage.list()
-                .map { ContainerImage(reference: $0.reference, digest: $0.digest) }
-                .sorted { $0.reference < $1.reference }
+            let sdkImages = try await ClientImage.list()
+            return try await withThrowingTaskGroup(of: ContainerImage.self) { group in
+                for img in sdkImages {
+                    group.addTask {
+                        let size = try? await Self.compressedSize(img)
+                        return ContainerImage(reference: img.reference, digest: img.digest, sizeBytes: size)
+                    }
+                }
+                var result: [ContainerImage] = []
+                for try await image in group { result.append(image) }
+                return result.sorted { $0.reference < $1.reference }
+            }
         } catch {
             throw ConsaiError.sdk(String(describing: error))
         }
+    }
+
+    /// Sum of OCI manifest sizes for the arm64 platform variant (compressed, on-disk bytes).
+    /// Returns nil gracefully — size is decorative; a failure here must never break the list.
+    private static func compressedSize(_ img: ClientImage) async throws -> Int64? {
+        let index = try? await img.index()
+        guard let manifests = index?.manifests else { return nil }
+        var total: Int64 = 0
+        for desc in manifests {
+            guard let platform = desc.platform,
+                  platform.architecture == "arm64" || platform.architecture == "aarch64" else { continue }
+            total += desc.size
+        }
+        return total > 0 ? total : nil
     }
 
     public func pull(reference: String) async throws {

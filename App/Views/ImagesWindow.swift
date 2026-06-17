@@ -14,6 +14,9 @@ struct ImagesWindow: View {
     var body: some View {
         VStack(spacing: 0) {
             pullBar
+            if let ref = appState.pullProgress {
+                pullProgressBanner(ref)
+            }
             Rectangle().fill(Theme.hairline).frame(height: 0.5)
             list
         }
@@ -49,6 +52,16 @@ struct ImagesWindow: View {
                 .buttonStyle(.borderless).foregroundStyle(Theme.dim).help("Refresh")
         }
         .padding(12)
+    }
+
+    private func pullProgressBanner(_ reference: String) -> some View {
+        HStack(spacing: 8) {
+            ProgressView().controlSize(.small)
+            Text("Pulling \(reference)…").font(Theme.mono(11)).foregroundStyle(Theme.jade)
+            Spacer(minLength: 0)
+        }
+        .padding(.horizontal, 12).padding(.vertical, 7)
+        .background(Theme.hover)
     }
 
     @ViewBuilder
@@ -99,8 +112,14 @@ private struct ImageRow: View {
                 Text(image.reference)
                     .font(Theme.ui(13, .medium)).foregroundStyle(Theme.text)
                     .textSelection(.enabled).lineLimit(1).truncationMode(.middle)
-                Text(image.shortDigest)
-                    .font(Theme.mono(10)).foregroundStyle(Theme.dim2)
+                HStack(spacing: 6) {
+                    Text(image.shortDigest)
+                        .font(Theme.mono(10)).foregroundStyle(Theme.dim2)
+                    if let size = image.formattedSize {
+                        Text("·").font(Theme.mono(10)).foregroundStyle(Theme.dim2)
+                        Text(size).font(Theme.mono(10)).foregroundStyle(Theme.dim2)
+                    }
+                }
             }
             Spacer(minLength: 8)
             if isDeleting {
