@@ -25,7 +25,7 @@ struct InfraWindow: View {
                     newNetwork = ""; Task { await appState.createNetwork(n) }
                 }
                 ForEach(appState.networks) { net in
-                    infraRow(title: net.name, subtitle: net.subnet ?? "") {
+                    InfraRow(title: net.name, subtitle: net.subnet ?? "") {
                         pendingDelete = PendingDelete(kind: .network, name: net.name)
                     }
                 }
@@ -38,7 +38,7 @@ struct InfraWindow: View {
                     newVolume = ""; Task { await appState.createVolume(v) }
                 }
                 ForEach(appState.volumes) { vol in
-                    infraRow(title: vol.name, subtitle: "\(vol.driver) · \(vol.source)") {
+                    InfraRow(title: vol.name, subtitle: "\(vol.driver) · \(vol.source)") {
                         pendingDelete = PendingDelete(kind: .volume, name: vol.name)
                     }
                 }
@@ -95,7 +95,21 @@ struct InfraWindow: View {
         .padding(.horizontal, 16).padding(.vertical, 6)
     }
 
-    private func infraRow(title: String, subtitle: String, delete: @escaping () -> Void) -> some View {
+    private func emptyRow(_ text: String) -> some View {
+        Text(text).font(Theme.ui(12)).foregroundStyle(Theme.dim2)
+            .padding(.horizontal, 16).padding(.vertical, 6)
+    }
+}
+
+/// Single network or volume row with hover lift and a reveal-on-hover delete button.
+private struct InfraRow: View {
+    let title: String
+    let subtitle: String
+    let onDelete: () -> Void
+
+    @State private var hovering = false
+
+    var body: some View {
         HStack(spacing: 10) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(title).font(Theme.ui(13, .medium)).foregroundStyle(Theme.text).lineLimit(1)
@@ -104,14 +118,14 @@ struct InfraWindow: View {
                 }
             }
             Spacer(minLength: 8)
-            Button(action: delete) { Image(systemName: "trash") }
+            Button(action: onDelete) { Image(systemName: "trash") }
                 .buttonStyle(.plain).foregroundStyle(Theme.dim).help("Delete")
+                .opacity(hovering ? 1 : 0)
         }
         .padding(.horizontal, 16).padding(.vertical, 7)
-    }
-
-    private func emptyRow(_ text: String) -> some View {
-        Text(text).font(Theme.ui(12)).foregroundStyle(Theme.dim2)
-            .padding(.horizontal, 16).padding(.vertical, 6)
+        .background(hovering ? Theme.hover : .clear, in: RoundedRectangle(cornerRadius: 7))
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.13), value: hovering)
     }
 }
