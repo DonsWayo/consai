@@ -124,16 +124,20 @@ struct PanelView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
+            // Create
             footerButton("plus", "Grow", help: "New container") { openWindow(id: "create") }
             if appState.composeAvailable {
                 footerButton("square.stack.3d.up", "Stack", help: "Start a compose stack") {
                     if let file = ComposeFilePicker.pick() { Task { await appState.composeUp(file: file) } }
                 }
             }
+            footerSep
+            // Browse
             footerButton("photo.stack", nil, help: "Images") { openWindow(id: "images") }
             footerButton("network", nil, help: "Networks & volumes") { openWindow(id: "infra") }
-            Spacer()
+            Spacer(minLength: 8)
+            // Utility
             footerButton("arrow.clockwise", nil, help: "Refresh") { Task { await appState.refresh() } }
             footerButton("gearshape", nil, help: "Settings") { openWindow(id: "settings") }
             Button { NSApplication.shared.terminate(nil) } label: {
@@ -143,6 +147,11 @@ struct PanelView: View {
             .keyboardShortcut("q", modifiers: .command)
         }
         .padding(.horizontal, 16).padding(.vertical, 11)
+    }
+
+    /// Hairline separating footer action groups (create · browse).
+    private var footerSep: some View {
+        Rectangle().fill(Theme.hairline).frame(width: 1, height: 15).padding(.horizontal, 1)
     }
 
     private func footerButton(_ symbol: String, _ title: String?, help: String, action: @escaping () -> Void) -> some View {
