@@ -16,12 +16,15 @@ final class AppState {
     var lastError: String?
 
     private(set) var images: [ContainerImage] = []
+    private(set) var networks: [ContainerNetwork] = []
+    private(set) var volumes: [ContainerVolume] = []
 
     private let containerEngine: ContainerEngine
     private let composeEngine: ComposeEngine
     private let serviceHealth: ServiceHealthChecking
     private let creator: ContainerCreating
     private let imageEngine: ImageEngine
+    private let infraEngine: InfraEngine
     private let store: RegistryStore
     private var registry: ProjectRegistry
     private var pollTask: Task<Void, Never>?
@@ -53,6 +56,7 @@ final class AppState {
         serviceHealth: ServiceHealthChecking = CLIServiceHealth(binaryPath: AppState.storedPath("containerBinaryPath")),
         creator: ContainerCreating = CLIContainerCreator(binaryPath: AppState.storedPath("containerBinaryPath")),
         imageEngine: ImageEngine = SDKImageEngine(binaryPath: AppState.storedPath("containerBinaryPath")),
+        infraEngine: InfraEngine = SDKInfraEngine(binaryPath: AppState.storedPath("containerBinaryPath")),
         store: RegistryStore = RegistryStore()
     ) {
         self.containerEngine = containerEngine
@@ -60,6 +64,7 @@ final class AppState {
         self.serviceHealth = serviceHealth
         self.creator = creator
         self.imageEngine = imageEngine
+        self.infraEngine = infraEngine
         self.store = store
         self.registry = store.load()
         startPolling()
@@ -284,6 +289,29 @@ final class AppState {
         } catch {
             lastError = describe(error)
         }
+    }
+
+    // MARK: - Networks & volumes
+
+    func loadInfra() async {
+        do {
+            async let n = infraEngine.listNetworks()
+            async let v = infraEngine.listVolumes()
+            networks = try await n
+            volumes = try await v
+        } catch {
+            lastError = describe(error)
+        }
+    }
+
+    func createNetwork(_ name: String) async { await infraOp { try await self.infraEngine.createNetwork(name: name) } }
+    func deleteNetwork(_ id: String) async { await infraOp { try await self.infraEngine.deleteNetwork(id: id) } }
+    func createVolume(_ name: String) async { await infraOp { try await self.infraEngine.createVolume(name: name) } }
+    func deleteVolume(_ name: String) async { await infraOp { try await self.infraEngine.deleteVolume(name: name) } }
+
+    private func infraOp(_ op: @escaping () async throws -> Void) async {
+        do { try await op(); await loadInfra() }
+        catch { lastError = describe(error) }
     }
 
     // MARK: - Helpers

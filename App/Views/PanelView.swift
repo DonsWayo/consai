@@ -103,28 +103,29 @@ struct PanelView: View {
     }
 
     private var footer: some View {
-        HStack(spacing: 16) {
-            footerButton("plus", "Grow") { openWindow(id: "create") }
+        HStack(spacing: 12) {
+            footerButton("plus", "Grow", help: "New container") { openWindow(id: "create") }
             if appState.composeAvailable {
-                footerButton("square.stack.3d.up", "Stack") {
+                footerButton("square.stack.3d.up", "Stack", help: "Start a compose stack") {
                     if let file = ComposeFilePicker.pick() { Task { await appState.composeUp(file: file) } }
                 }
             }
-            footerButton("photo.stack", "Images") { openWindow(id: "images") }
+            footerButton("photo.stack", nil, help: "Images") { openWindow(id: "images") }
+            footerButton("network", nil, help: "Networks & volumes") { openWindow(id: "infra") }
             Spacer()
-            footerButton("arrow.clockwise", nil) { Task { await appState.refresh() } }
-            footerButton("gearshape", "Tend") { openWindow(id: "settings") }
+            footerButton("arrow.clockwise", nil, help: "Refresh") { Task { await appState.refresh() } }
+            footerButton("gearshape", "Tend", help: "Settings") { openWindow(id: "settings") }
         }
         .padding(.horizontal, 16).padding(.vertical, 11)
     }
 
-    private func footerButton(_ symbol: String, _ title: String?, action: @escaping () -> Void) -> some View {
+    private func footerButton(_ symbol: String, _ title: String?, help: String, action: @escaping () -> Void) -> some View {
         Button(action: action) {
             HStack(spacing: 5) {
                 Image(systemName: symbol).font(.system(size: 12))
                 if let title { Text(title).font(Theme.ui(12)) }
             }
         }
-        .buttonStyle(.plain).foregroundStyle(Theme.dim)
+        .buttonStyle(.plain).foregroundStyle(Theme.dim).help(help)
     }
 }

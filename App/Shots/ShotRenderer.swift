@@ -56,6 +56,8 @@ enum ShotRenderer {
         await shoot(PanelView().environment(state), width: 360, height: 600, name: "live-panel", dir: dir)
         await state.loadImages()
         await shoot(ImagesWindow().environment(state), width: 560, height: 420, name: "live-images", dir: dir)
+        await state.loadInfra()
+        await shoot(InfraWindow().environment(state), width: 560, height: 460, name: "live-infra", dir: dir)
         FileHandle.standardError.write(Data("rendered live panel to \(dir.path)\n".utf8))
     }
 
