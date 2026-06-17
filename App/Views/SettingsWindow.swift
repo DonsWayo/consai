@@ -43,15 +43,12 @@ struct SettingsWindow: View {
             }
 
             Section("Binaries") {
-                LabeledContent("container") {
-                    TextField("auto-detected", text: $containerBinaryPath)
-                        .textFieldStyle(.roundedBorder).frame(maxWidth: 240)
-                }
-                LabeledContent("container-compose") {
-                    TextField("auto-detected", text: $composeBinaryPath)
-                        .textFieldStyle(.roundedBorder).frame(maxWidth: 240)
-                }
-                Text("Override only if your binaries aren't in a standard location. Empty = auto-detect. Applies on relaunch.")
+                // Native Form TextField (title + prompt) — NOT LabeledContent-wrapped, which on
+                // macOS double-labels and misaligns. The prompt shows the actual auto-detected
+                // path so it's clear what's in use; typing a path overrides it.
+                TextField("container", text: $containerBinaryPath, prompt: Text(detectedPath(container: true)))
+                TextField("container-compose", text: $composeBinaryPath, prompt: Text(detectedPath(container: false)))
+                Text("Leave empty to auto-detect. Override only if a binary isn't in a standard location. Applies on relaunch.")
                     .font(.caption).foregroundStyle(.secondary)
             }
 
@@ -75,6 +72,14 @@ struct SettingsWindow: View {
         .background(Theme.bg)
         .frame(width: 420, height: 360)
         .onAppear { NSApp.activate(ignoringOtherApps: true) }
+    }
+
+    /// The auto-detected path for a binary (placeholder text), or a hint if none is found.
+    private func detectedPath(container: Bool) -> String {
+        let url = container
+            ? CLIServiceHealth.resolveBinary(explicit: nil)
+            : CLIComposeEngine.resolveBinary(explicit: nil)
+        return url?.path ?? "not found — enter a path"
     }
 
     private var statusText: String {
