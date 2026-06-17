@@ -36,6 +36,8 @@ struct ContainerRow: View {
                 actions
             } else {
                 vitals
+                    .lineLimit(1)
+                    .fixedSize(horizontal: true, vertical: false)  // keep vitals one line; image truncates
             }
         }
         .padding(.vertical, 7)
@@ -51,15 +53,23 @@ struct ContainerRow: View {
     private var vitals: some View {
         switch container.status {
         case .running:
-            HStack(spacing: 5) {
-                if let ip = container.ipAddress {
-                    Text(ip).font(Theme.mono(10)).foregroundStyle(Theme.ip)
-                }
-                if let mem = container.memoryBytes {
-                    if container.ipAddress != nil { Text("·").font(Theme.mono(10)).foregroundStyle(Theme.dim2) }
-                    Text(formatBytes(mem)).font(Theme.mono(10)).foregroundStyle(Theme.dim)
-                } else if container.ipAddress == nil {
-                    Text("alive").font(Theme.mono(10)).foregroundStyle(Theme.jade)
+            let extras = [
+                container.cpuPercent.map { "\(Int($0.rounded()))%" },
+                container.memoryBytes.map(formatBytes),
+            ].compactMap { $0 }
+            if container.ipAddress == nil && extras.isEmpty {
+                Text("alive").font(Theme.mono(10)).foregroundStyle(Theme.jade)
+            } else {
+                HStack(spacing: 4) {
+                    if let ip = container.ipAddress {
+                        Text(ip).font(Theme.mono(10)).foregroundStyle(Theme.ip)
+                    }
+                    ForEach(Array(extras.enumerated()), id: \.offset) { index, value in
+                        if index > 0 || container.ipAddress != nil {
+                            Text("·").font(Theme.mono(10)).foregroundStyle(Theme.dim2)
+                        }
+                        Text(value).font(Theme.mono(10)).foregroundStyle(Theme.dim)
+                    }
                 }
             }
         case .stopped:
