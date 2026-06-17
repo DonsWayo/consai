@@ -9,6 +9,7 @@ struct ImagesWindow: View {
     @State private var pullRef = ""
     @State private var pulling = false
     @State private var deleting: String?
+    @State private var confirmingDelete: String?
 
     var body: some View {
         VStack(spacing: 0) {
@@ -20,6 +21,14 @@ struct ImagesWindow: View {
         .background(Theme.bg)
         .preferredColorScheme(.dark).tint(Theme.jade)
         .navigationTitle("Images")
+        .confirmationDialog("Delete image?", isPresented: Binding(
+            get: { confirmingDelete != nil }, set: { if !$0 { confirmingDelete = nil } }
+        ), presenting: confirmingDelete) { ref in
+            Button("Delete \(ref)", role: .destructive) { delete(ref) }
+            Button("Cancel", role: .cancel) {}
+        } message: { ref in
+            Text("Removes the local image \(ref). Containers using it keep running.")
+        }
         .onAppear {
             NSApp.activate(ignoringOtherApps: true)
             Task { await appState.loadImages() }
@@ -61,7 +70,7 @@ struct ImagesWindow: View {
                             if deleting == image.reference {
                                 ProgressView().controlSize(.small)
                             } else {
-                                Button { delete(image.reference) } label: { Image(systemName: "trash") }
+                                Button { confirmingDelete = image.reference } label: { Image(systemName: "trash") }
                                     .buttonStyle(.plain).foregroundStyle(Theme.dim).help("Delete")
                             }
                         }

@@ -8,6 +8,12 @@ struct InfraWindow: View {
     @Environment(AppState.self) private var appState
     @State private var newNetwork = ""
     @State private var newVolume = ""
+    @State private var pendingDelete: PendingDelete?
+
+    private struct PendingDelete: Identifiable {
+        enum Kind { case network, volume }
+        let id = UUID(); let kind: Kind; let name: String
+    }
 
     var body: some View {
         ScrollView {
@@ -20,7 +26,7 @@ struct InfraWindow: View {
                 }
                 ForEach(appState.networks) { net in
                     infraRow(title: net.name, subtitle: net.subnet ?? "") {
-                        Task { await appState.deleteNetwork(net.id) }
+                        pendingDelete = PendingDelete(kind: .network, name: net.name)
                     }
                 }
                 if appState.networks.isEmpty { emptyRow("No networks") }
@@ -33,7 +39,7 @@ struct InfraWindow: View {
                 }
                 ForEach(appState.volumes) { vol in
                     infraRow(title: vol.name, subtitle: "\(vol.driver) · \(vol.source)") {
-                        Task { await appState.deleteVolume(vol.name) }
+                        pendingDelete = PendingDelete(kind: .volume, name: vol.name)
                     }
                 }
                 if appState.volumes.isEmpty { emptyRow("No volumes") }
@@ -44,9 +50,33 @@ struct InfraWindow: View {
         .background(Theme.bg)
         .preferredColorScheme(.dark).tint(Theme.jade)
         .navigationTitle("Networks & Volumes")
+        .confirmationDialog(deleteTitle, isPresented: Binding(
+            get: { pendingDelete != nil }, set: { if !$0 { pendingDelete = nil } }
+        ), presenting: pendingDelete) { item in
+            Button("Delete \(item.name)", role: .destructive) {
+                switch item.kind {
+                case .network: Task { await appState.deleteNetwork(item.name) }
+                case .volume:  Task { await appState.deleteVolume(item.name) }
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { item in
+            switch item.kind {
+            case .network: Text("Removes the network \(item.name). Containers attached to it may lose connectivity.")
+            case .volume:  Text("Permanently deletes volume \(item.name) and all data stored in it. This can't be undone.")
+            }
+        }
         .onAppear {
             NSApp.activate(ignoringOtherApps: true)
             Task { await appState.loadInfra() }
+        }
+    }
+
+    private var deleteTitle: String {
+        switch pendingDelete?.kind {
+        case .volume: return "Delete volume?"
+        case .network: return "Delete network?"
+        case nil: return "Delete?"
         }
     }
 
