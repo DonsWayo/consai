@@ -38,11 +38,17 @@ final class AppState {
         }
     }
 
+    /// A user-configured binary path from settings, or nil to auto-detect (empty = auto).
+    static func storedPath(_ key: String) -> String? {
+        let value = UserDefaults.standard.string(forKey: key)
+        return (value?.isEmpty == false) ? value : nil
+    }
+
     init(
         containerEngine: ContainerEngine = SDKContainerEngine(),
-        composeEngine: ComposeEngine = CLIComposeEngine(),
-        serviceHealth: ServiceHealthChecking = CLIServiceHealth(),
-        creator: ContainerCreating = CLIContainerCreator(),
+        composeEngine: ComposeEngine = CLIComposeEngine(binaryPath: AppState.storedPath("composeBinaryPath")),
+        serviceHealth: ServiceHealthChecking = CLIServiceHealth(binaryPath: AppState.storedPath("containerBinaryPath")),
+        creator: ContainerCreating = CLIContainerCreator(binaryPath: AppState.storedPath("containerBinaryPath")),
         store: RegistryStore = RegistryStore()
     ) {
         self.containerEngine = containerEngine
