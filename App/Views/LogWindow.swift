@@ -12,7 +12,9 @@ struct LogWindow: View {
     @State private var lines: [LogLine] = []
     @State private var nextID = 0
     @State private var filter = ""
-    @State private var autoscroll = true
+    /// Follow the tail only while the view is parked at the bottom. Scrolling up pauses it
+    /// (so you can read); scrolling back to the bottom — or hitting "Jump to latest" — resumes.
+    @State private var following = true
     @State private var streamTask: Task<Void, Never>?
 
     private var visibleLines: [LogLine] {
@@ -37,10 +39,27 @@ struct LogWindow: View {
                     }
                     .padding(8)
                 }
-                // Key off the last line's monotonic id (not count) so autoscroll keeps
-                // working after the 5000-line cap, where count stops changing.
+                // Pause following the moment the user scrolls away from the bottom; resume
+                // when they return. This is what lets you actually read scrollback.
+                .onScrollGeometryChange(for: Bool.self) { geo in
+                    geo.contentOffset.y >= geo.contentSize.height - geo.bounds.height - 28
+                } action: { _, atBottom in
+                    following = atBottom
+                }
+                // Key off the last line's monotonic id (not count) so following keeps working
+                // after the 5000-line cap, where count stops changing.
                 .onChange(of: visibleLines.last?.id) { _, _ in
-                    if autoscroll { proxy.scrollTo("bottom", anchor: .bottom) }
+                    if following { proxy.scrollTo("bottom", anchor: .bottom) }
+                }
+                .overlay(alignment: .bottomTrailing) {
+                    if !following {
+                        Button { following = true; proxy.scrollTo("bottom", anchor: .bottom) } label: {
+                            Label("Jump to latest", systemImage: "arrow.down.to.line")
+                                .font(.caption).padding(.horizontal, 10).padding(.vertical, 6)
+                        }
+                        .buttonStyle(.borderedProminent).tint(Theme.jade)
+                        .padding(12)
+                    }
                 }
             }
         }
@@ -58,7 +77,9 @@ struct LogWindow: View {
         HStack(spacing: 8) {
             Image(systemName: "doc.text.magnifyingglass").foregroundStyle(.secondary)
             TextField("Filter", text: $filter).textFieldStyle(.roundedBorder).frame(maxWidth: 220)
-            Toggle("Autoscroll", isOn: $autoscroll).toggleStyle(.checkbox)
+            Label(following ? "Following" : "Paused", systemImage: following ? "dot.radiowaves.up.forward" : "pause.circle")
+                .font(.caption).foregroundStyle(following ? Theme.jade : .secondary)
+                .help(following ? "Following new log lines — scroll up to pause" : "Paused — scroll to the bottom or tap Jump to latest to resume")
             Spacer()
             Text("\(lines.count) lines").font(.caption).foregroundStyle(.secondary)
             Button("Clear") { lines.removeAll() }
