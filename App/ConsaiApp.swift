@@ -52,6 +52,11 @@ struct ConsaiApp: App {
         }
         .menuBarExtraStyle(.window)
 
+        Window("Images", id: "images") {
+            ImagesWindow().environment(appState)
+        }
+        .defaultSize(width: 560, height: 420)
+
         Window("Consai Settings", id: "settings") {
             SettingsWindow().environment(appState)
                 .preferredColorScheme(.dark).tint(Theme.jade)

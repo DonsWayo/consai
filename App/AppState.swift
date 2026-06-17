@@ -15,10 +15,13 @@ final class AppState {
     private(set) var inFlight: Set<String> = []
     var lastError: String?
 
+    private(set) var images: [ContainerImage] = []
+
     private let containerEngine: ContainerEngine
     private let composeEngine: ComposeEngine
     private let serviceHealth: ServiceHealthChecking
     private let creator: ContainerCreating
+    private let imageEngine: ImageEngine
     private let store: RegistryStore
     private var registry: ProjectRegistry
     private var pollTask: Task<Void, Never>?
@@ -49,12 +52,14 @@ final class AppState {
         composeEngine: ComposeEngine = CLIComposeEngine(binaryPath: AppState.storedPath("composeBinaryPath")),
         serviceHealth: ServiceHealthChecking = CLIServiceHealth(binaryPath: AppState.storedPath("containerBinaryPath")),
         creator: ContainerCreating = CLIContainerCreator(binaryPath: AppState.storedPath("containerBinaryPath")),
+        imageEngine: ImageEngine = SDKImageEngine(binaryPath: AppState.storedPath("containerBinaryPath")),
         store: RegistryStore = RegistryStore()
     ) {
         self.containerEngine = containerEngine
         self.composeEngine = composeEngine
         self.serviceHealth = serviceHealth
         self.creator = creator
+        self.imageEngine = imageEngine
         self.store = store
         self.registry = store.load()
         startPolling()
@@ -252,6 +257,34 @@ final class AppState {
     }
 
     func clearError() { lastError = nil }
+
+    // MARK: - Images
+
+    func loadImages() async {
+        do { images = try await imageEngine.list() }
+        catch { lastError = describe(error) }
+    }
+
+    /// Pull an image; returns true on success. Refreshes the image list.
+    func pullImage(_ reference: String) async -> Bool {
+        do {
+            try await imageEngine.pull(reference: reference)
+            await loadImages()
+            return true
+        } catch {
+            lastError = describe(error)
+            return false
+        }
+    }
+
+    func deleteImage(_ reference: String) async {
+        do {
+            try await imageEngine.delete(reference: reference)
+            await loadImages()
+        } catch {
+            lastError = describe(error)
+        }
+    }
 
     // MARK: - Helpers
 

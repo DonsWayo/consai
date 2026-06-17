@@ -99,6 +99,20 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
     }
 }
 
+@Suite struct SDKImageEngineTests {
+    @Test func buildsImageCommandArgs() {
+        #expect(SDKImageEngine.pullArguments(reference: "docker.io/library/nginx:latest")
+                == ["image", "pull", "docker.io/library/nginx:latest"])
+        #expect(SDKImageEngine.deleteArguments(reference: "alpine:latest")
+                == ["image", "delete", "alpine:latest"])
+    }
+
+    @Test func shortDigestTrimsAlgoAndLength() {
+        let img = ContainerImage(reference: "nginx:latest", digest: "sha256:abcdef0123456789aaaa")
+        #expect(img.shortDigest == "abcdef012345")
+    }
+}
+
 @Suite struct CLIServiceHealthTests {
     @Test func parsesNegativeSignalsAsStopped() {
         #expect(CLIServiceHealth.parseStatus(exitCode: 0, output: "apiserver is not running") == .stopped)
