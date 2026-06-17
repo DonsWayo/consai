@@ -8,6 +8,8 @@ struct SettingsWindow: View {
     @AppStorage("pollOpen") private var pollOpen = 2.0
     @AppStorage("pollClosed") private var pollClosed = 15.0
     @AppStorage("groupByNamePrefix") private var groupByNamePrefix = false
+    @AppStorage("containerBinaryPath") private var containerBinaryPath = ""
+    @AppStorage("composeBinaryPath") private var composeBinaryPath = ""
     @State private var working = false
 
     var body: some View {
@@ -37,6 +39,17 @@ struct SettingsWindow: View {
                     Text("Install with: brew install container-compose")
                         .font(.caption).foregroundStyle(.secondary).textSelection(.enabled)
                 }
+            }
+
+            Section("Binaries") {
+                LabeledContent("container") {
+                    TextField("auto-detected", text: $containerBinaryPath).frame(maxWidth: 240)
+                }
+                LabeledContent("container-compose") {
+                    TextField("auto-detected", text: $composeBinaryPath).frame(maxWidth: 240)
+                }
+                Text("Override only if your binaries aren't in a standard location. Empty = auto-detect. Applies on relaunch.")
+                    .font(.caption).foregroundStyle(.secondary)
             }
 
             Section("Stacks") {
