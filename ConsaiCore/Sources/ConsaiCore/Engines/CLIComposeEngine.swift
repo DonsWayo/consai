@@ -23,11 +23,11 @@ public struct CLIComposeEngine: ComposeEngine {
     public var isAvailable: Bool { binaryURL != nil }
 
     public func up(file: URL) async throws {
-        try await runCompose(["up", "-d"], composeFile: file)
+        try await runCompose(["up", "-d", "--file", file.path], composeFile: file)
     }
 
     public func down(file: URL) async throws {
-        try await runCompose(["down"], composeFile: file)
+        try await runCompose(["down", "--file", file.path], composeFile: file)
     }
 
     private func runCompose(_ arguments: [String], composeFile: URL) async throws {

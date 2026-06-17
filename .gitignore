@@ -14,5 +14,8 @@ Package.resolved
 # Built app bundle (produced by scripts/bundle.sh)
 Consai.app/
 
+# Generated screenshot scratch dir (committed copies live in docs/screenshots/)
+/shots/
+
 # (Legacy) generated Xcode project — the project now builds with SwiftPM, not XcodeGen.
 Consai.xcodeproj/

@@ -30,7 +30,7 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
 
         let invocation = try #require(spy.invocations.first)
         #expect(invocation.executable == "/usr/local/bin/container-compose")
-        #expect(invocation.arguments == ["up", "-d"])
+        #expect(invocation.arguments == ["up", "-d", "--file", composeFile.path])
         #expect(invocation.cwd?.path == "/Users/me/projects/shop")
     }
 
@@ -40,7 +40,7 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
         try await engine.down(file: composeFile)
 
         let invocation = try #require(spy.invocations.first)
-        #expect(invocation.arguments == ["down"])
+        #expect(invocation.arguments == ["down", "--file", composeFile.path])
         #expect(invocation.cwd?.path == "/Users/me/projects/shop")
     }
 

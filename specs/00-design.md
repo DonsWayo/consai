@@ -111,9 +111,9 @@ Package.swift
   library product**, so it cannot be imported via SPM today. Shelling out keeps zero
   coupling. (Future option: upstream a one-line `.library` product and swap to a
   library call behind the same `ComposeEngine` protocol — no UI change.)
-- SDK version: pinned to **`apple/container` 0.12.3** (Orchard's proven-in-Xcode graph).
-  `1.0.0` pulls a pre-release `swift-distributed-tracing` commit Xcode's SwiftPM integration
-  can't build; `0.12.3` resolves the clean tagged `1.4.1`. The SDK calls we use are identical.
+- SDK version: pinned to **`apple/container` 1.0.0** to match the installed `container`
+  daemon (a lib/daemon skew causes XPC wire-decode errors — caught by E2E). Building with
+  SwiftPM (not `.xcodeproj`) sidesteps the Xcode transitive-package bug that 1.0.0 hit there.
 - Build/runtime requirements: **macOS 26 (Tahoe)**, **Xcode 26 / Swift 6.2**,
   `container` installed, `container-compose` installed (optional — only for stacks).
 

@@ -1,6 +1,27 @@
 import SwiftUI
+import AppKit
 
+/// Entry point. `--render-shots <dir>` renders UI screenshots and exits; otherwise the
+/// normal menu bar app runs.
 @main
+enum ConsaiEntry {
+    static func main() {
+        let args = CommandLine.arguments
+        if let i = args.firstIndex(of: "--render-shots") {
+            let dir = URL(fileURLWithPath: i + 1 < args.count ? args[i + 1] : "shots")
+            let app = NSApplication.shared
+            app.setActivationPolicy(.accessory)
+            Task { @MainActor in
+                await ShotRenderer.renderAll(to: dir)
+                exit(0)
+            }
+            app.run()
+        } else {
+            ConsaiApp.main()
+        }
+    }
+}
+
 struct ConsaiApp: App {
     @State private var appState = AppState()
 

@@ -70,12 +70,13 @@ open Package.swift               # do NOT generate/open an .xcodeproj
 
 Read before building. These are the things most likely to bite.
 
-### R1 — `apple/container` is a fast-moving, pre-stable SDK (HIGH)
-The SDK surface (`ContainerClient`, `ContainerSnapshot`, `ContainerCreateOptions`) can
-change between releases. **Pinned to `0.12.3`** (exact) — Orchard's proven-in-Xcode graph.
-`1.0.0` pulls a pre-release `swift-distributed-tracing` Xcode can't build (see R11).
-Mitigation: isolate all SDK use in `SDKContainerEngine` + mapping so breakage is one file.
-Revisit moving to `1.0.0` once its transitive tracing dep ships a tagged, Xcode-buildable release.
+### R1 — SDK library version MUST match the installed `container` daemon (HIGH)
+**Pinned to `1.0.0`** to match the installed `container` daemon. A library/daemon version
+skew causes XPC **wire-decoding errors at runtime** (E2E caught `stop` failing with
+`signal` String-vs-number when the lib was 0.12.3 against a 1.0.0 daemon). The earlier
+0.12.3 pin only existed to dodge an Xcode `.xcodeproj` bug — moot now that we build with
+SwiftPM (see R11). If a user's daemon is a different major, the pin must track it.
+Mitigation: all SDK use is isolated in `SDKContainerEngine` + mapping (one file to adjust).
 
 ### R2 — Stack grouping is by NAME PREFIX, not a label (HIGH)
 `container-compose` names containers `<project>-<service>` and does **not** stamp a project

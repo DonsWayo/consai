@@ -10,8 +10,11 @@ let package = Package(
     name: "Consai",
     platforms: [.macOS(.v26)],
     dependencies: [
-        // Apple's container SDK, pinned to the release Orchard ships against (see CLAUDE.md R1).
-        .package(url: "https://github.com/apple/container.git", exact: "0.12.3"),
+        // Apple's container SDK, pinned to 1.0.0 to MATCH the installed `container` daemon —
+        // a library/daemon version skew causes XPC wire-decoding errors (e.g. stop options
+        // `signal` String-vs-number). The earlier 0.12.3 pin only existed to dodge an Xcode
+        // .xcodeproj bug; we build with SwiftPM now, so 1.0.0 is fine (see CLAUDE.md R1/R11).
+        .package(url: "https://github.com/apple/container.git", exact: "1.0.0"),
     ],
     targets: [
         // Reusable, UI-free engine.

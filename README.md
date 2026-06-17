@@ -29,6 +29,30 @@ swift test                   # ConsaiCore unit tests (no container needed)
 open Package.swift           # Xcode GUI development (uses SwiftPM's build)
 ```
 
+## Screenshots
+
+Captured live against a real `container` daemon (`Consai --render-shots <dir>` hosts the
+real views in windows and `screencapture`s them):
+
+| Panel | Settings | New container |
+|---|---|---|
+| ![panel](docs/screenshots/panel.png) | ![settings](docs/screenshots/settings.png) | ![create](docs/screenshots/create-container.png) |
+
+## Testing
+
+```bash
+swift test                       # unit tests (pure ConsaiCore, no daemon)
+
+# End-to-end against a LIVE daemon (creates + deletes throwaway consai-e2e-* containers,
+# pulls alpine, runs a real compose up/down). Requires `container` running + container-compose.
+CONSAI_E2E=1 swift test
+```
+
+E2E is gated behind `CONSAI_E2E=1` and is destructive (throwaway resources only — never
+touches containers it didn't create). It verifies the real SDK lifecycle (create/start/
+stop/delete), service status, and compose grouping. **Note:** the SDK library version must
+match your installed daemon (see `CLAUDE.md` R1) — a skew surfaces as XPC decode errors.
+
 ## Architecture
 
 - **`ConsaiCore`** — UI-free Swift package: container/compose engines (behind protocols),
