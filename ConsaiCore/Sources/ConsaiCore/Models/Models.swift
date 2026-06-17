@@ -57,10 +57,14 @@ public func formatBytes(_ bytes: UInt64) -> String {
     return "\(Int(mb.rounded())) MB"
 }
 
-/// Whether a stack was launched by Consai (authoritative, has compose file) or merely
-/// inferred from container naming (best-effort, may lack a compose file).
+/// How confident we are that a stack's grouping is real.
 public enum StackOrigin: Sendable, Equatable {
+    /// Consai launched it via compose; we hold its compose file (full up/down).
     case launchedByConsai
+    /// Grouped reliably by the `com.docker.compose.project` label (a real stack, possibly
+    /// launched outside Consai so we may not hold its compose file).
+    case composeLabeled
+    /// Best-effort grouping from the `<project>-<service>` name prefix (may mis-group).
     case inferred
 }
 

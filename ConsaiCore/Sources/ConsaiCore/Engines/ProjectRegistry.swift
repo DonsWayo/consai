@@ -44,6 +44,10 @@ public struct ProjectRegistry: Codable, Sendable, Equatable {
 
     // MARK: - Assembly
 
+    /// The de-facto-standard Docker Compose project label, written by compose tools (incl.
+    /// container-compose once Mcrich23/Container-Compose#110 lands).
+    public static let composeProjectLabel = "com.docker.compose.project"
+
     /// Fold containers into stacks + standalone leftovers.
     ///
     /// - Parameter inferStacks: when true, containers Consai didn't launch are grouped by
@@ -57,6 +61,24 @@ public struct ProjectRegistry: Codable, Sendable, Equatable {
     ) -> (stacks: [Stack], standalone: [Container]) {
         var remaining = containers
         var stacks: [Stack] = []
+
+        // 0. Reliable grouping by the `com.docker.compose.project` label (always on — no
+        //    guessing). Lets externally-launched stacks group correctly without the
+        //    name-prefix heuristic, once the compose tool labels its containers.
+        let labeled = Dictionary(grouping: remaining.filter { $0.labels[Self.composeProjectLabel] != nil }) {
+            $0.labels[Self.composeProjectLabel]!
+        }
+        for (project, members) in labeled {
+            remaining.removeAll { m in members.contains { $0.id == m.id } }
+            stacks.append(
+                Stack(
+                    projectName: project,
+                    composeFilePath: knownProjects[project]?.path,
+                    services: members,
+                    origin: .composeLabeled
+                )
+            )
+        }
 
         // 1. Known projects (authoritative), longest project name first so a more specific
         //    project wins over a shorter one that is a prefix of it.

@@ -87,7 +87,9 @@ struct StackSection: View {
             stackButton("folder", "Reveal compose file") {
                 NSWorkspace.shared.activateFileViewerSelecting([file])
             }
-        } else if stack.origin == .inferred {
+        } else if appState.composeAvailable {
+            // No compose file linked yet (inferred, or labeled but launched outside Consai):
+            // let the user point at one to enable up/down.
             stackButton("link", "Link compose file…") {
                 if let file = ComposeFilePicker.pick() {
                     appState.linkComposeFile(project: stack.projectName, file: file)
