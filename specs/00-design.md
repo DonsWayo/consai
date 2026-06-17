@@ -69,7 +69,7 @@ service-health check — is what every later feature reuses.
 
 A single **SwiftPM package** (`Package.swift`) with a library target + an executable target.
 Built with SwiftPM, **not** an `.xcodeproj` — Xcode 26.5's `.xcodeproj` SwiftPM integration
-can't build the SDK's transitive package graph (see CLAUDE.md R11). `scripts/bundle.sh` wraps
+can't build the SDK's transitive package graph (see CLAUDE.md R11). `swift run bundle` wraps
 the executable into `Consai.app`.
 
 ```

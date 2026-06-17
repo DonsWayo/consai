@@ -56,5 +56,11 @@ let package = Package(
         // so `swift run coverage` builds in a second and only shells out to `xcrun` — it never
         // re-invokes SwiftPM, so there is no build-lock deadlock.
         .executableTarget(name: "coverage", path: "Tools/coverage"),
+        // Native-Swift app bundler (replaces scripts/bundle.sh): `swift run bundle [debug|release]`
+        // builds Consai and assembles an ad-hoc-signed Consai.app.
+        .executableTarget(name: "bundle", path: "Tools/bundle"),
+        // Native-Swift icon builder (replaces scripts/make-icon.sh): `swift run icon` renders the
+        // icon and writes App/Resources/AppIcon.icns.
+        .executableTarget(name: "icon", path: "Tools/icon"),
     ]
 )

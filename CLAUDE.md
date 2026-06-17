@@ -35,15 +35,21 @@ SwiftPM integration can't build the SDK's transitive package modules).
 swift build                      # debug; add -c release for release
 
 # Build + assemble a runnable Consai.app (LSUIElement menu bar agent, ad-hoc signed)
-scripts/bundle.sh                # release by default; `scripts/bundle.sh debug` for debug
+swift run bundle                 # release by default; `swift run bundle debug` for debug
 open Consai.app
 
 # Run the unit tests (pure ConsaiCore logic; no `container` needed)
-swift test
+swift test                       # add --enable-code-coverage, then `swift run coverage`
+
+# (Re)build the app icon → App/Resources/AppIcon.icns
+swift run icon
 
 # GUI development in Xcode: open the package directly (uses the working SwiftPM build)
 open Package.swift               # do NOT generate/open an .xcodeproj
 ```
+
+> Tooling is native Swift, not shell scripts: `bundle`, `icon`, and `coverage` are
+> executable targets under `Tools/` (run via `swift run <name>`).
 
 > First build is slow: SwiftPM compiles the entire `apple/container` SDK graph from source
 > (BoringSSL, zstd, NIO, gRPC, ~3 min). It caches afterward — later builds are incremental.
@@ -129,7 +135,7 @@ package graph: it fails to wire up transitive modules (`ServiceContextModule`, `
 `Logging`, `SystemPackage`, …) and, with explicit modules, the C-library builtin `.pcm`s.
 Adding packages directly is unreliable whack-a-mole. **Resolution:** the project builds with
 **SwiftPM** (`Package.swift`) — the same build system that compiles the graph cleanly — and
-`scripts/bundle.sh` wraps the executable into `Consai.app`. Do **not** reintroduce XcodeGen /
+`swift run bundle` wraps the executable into `Consai.app`. Do **not** reintroduce XcodeGen /
 `.xcodeproj`; for Xcode GUI work, `open Package.swift`. (`apple/container` is also
 Apple-silicon-only — builds are arm64.)
 

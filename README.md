@@ -24,10 +24,14 @@ Consai builds with **SwiftPM** (not an `.xcodeproj` — see `CLAUDE.md` R11):
 
 ```bash
 swift build                  # build the app
-scripts/bundle.sh            # build + assemble a runnable Consai.app, then: open Consai.app
+swift run bundle             # build + assemble a runnable Consai.app, then: open Consai.app
 swift test                   # ConsaiCore unit tests (no container needed)
+swift run coverage           # after `swift test --enable-code-coverage`: print coverage report
 open Package.swift           # Xcode GUI development (uses SwiftPM's build)
 ```
+
+Build tooling (`bundle`, `icon`, `coverage`) is native Swift — executable targets under
+`Tools/`, run with `swift run <name>` — not shell scripts.
 
 ## Screenshots
 
