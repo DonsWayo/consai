@@ -4,6 +4,7 @@ import ConsaiKit
 import AppKit
 
 /// Per-container detail: image, command, started, env, ports, mounts; open a shell or logs.
+/// Refreshes every 5 s while visible so status and vitals stay current.
 struct DetailWindow: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openWindow) private var openWindow
@@ -11,6 +12,7 @@ struct DetailWindow: View {
 
     @State private var detail: ContainerDetail?
     @State private var loading = true
+    @State private var refreshTask: Task<Void, Never>?
 
     var body: some View {
         ScrollView {
@@ -18,6 +20,7 @@ struct DetailWindow: View {
                 if loading {
                     ProgressView().padding(24)
                 } else if let detail {
+                    statusRow
                     field("Image", detail.image)
                     field("Command", detail.command.isEmpty ? "—" : detail.command)
                     if let started = detail.startedAt {
@@ -44,8 +47,47 @@ struct DetailWindow: View {
         }
         .onAppear {
             NSApp.activate(ignoringOtherApps: true)
-            Task { detail = await appState.detail(containerID); loading = false }
+            startRefreshing()
         }
+        .onDisappear { stopRefreshing() }
+    }
+
+    /// Live status dot + container name, mirroring the panel ContainerRow look.
+    @ViewBuilder
+    private var statusRow: some View {
+        if let container = appState.containers.first(where: { $0.id == containerID }) {
+            HStack(spacing: 8) {
+                StatusDot(status: container.status)
+                Text(container.status.rawValue.capitalized)
+                    .font(Theme.ui(12, .medium))
+                    .foregroundStyle(container.status == .running ? Theme.jade : Theme.dim)
+                if let mem = container.memoryBytes {
+                    Spacer(minLength: 0)
+                    Text(formatBytes(mem))
+                        .font(Theme.mono(11)).foregroundStyle(Theme.dim2)
+                }
+                if let cpu = container.cpuPercent {
+                    Text(String(format: "%.1f%%", cpu))
+                        .font(Theme.mono(11)).foregroundStyle(Theme.dim2)
+                }
+            }
+            .padding(.horizontal, 16).padding(.top, 12).padding(.bottom, 4)
+        }
+    }
+
+    private func startRefreshing() {
+        refreshTask = Task { @MainActor in
+            while !Task.isCancelled {
+                detail = await appState.detail(containerID)
+                loading = false
+                try? await Task.sleep(for: .seconds(5))
+            }
+        }
+    }
+
+    private func stopRefreshing() {
+        refreshTask?.cancel()
+        refreshTask = nil
     }
 
     private func field(_ label: String, _ value: String) -> some View {
