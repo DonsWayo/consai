@@ -57,7 +57,7 @@ public struct CLIServiceHealth: ServiceHealthChecking {
         return exitCode == 0 ? .running : .unknown
     }
 
-    static func resolveBinary(explicit: String?) -> URL? {
+    public static func resolveBinary(explicit: String?) -> URL? {
         var candidates: [String] = []
         if let explicit { candidates.append(explicit) }
         candidates += ["/usr/local/bin/container", "/opt/homebrew/bin/container"]

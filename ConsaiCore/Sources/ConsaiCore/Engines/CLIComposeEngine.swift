@@ -40,7 +40,7 @@ public struct CLIComposeEngine: ComposeEngine {
         }
     }
 
-    static func resolveBinary(explicit: String?) -> URL? {
+    public static func resolveBinary(explicit: String?) -> URL? {
         var candidates: [String] = []
         if let explicit { candidates.append(explicit) }
         candidates += ["/opt/homebrew/bin/container-compose", "/usr/local/bin/container-compose"]
