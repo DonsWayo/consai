@@ -65,6 +65,28 @@ public struct SDKContainerEngine: ContainerEngine {
         try? await ContainerClient().stats(id: id).cpuUsageUsec
     }
 
+    public func detail(id: String) async throws -> ContainerDetail {
+        do {
+            let snapshot = try await ContainerClient().get(id: id)
+            let config = snapshot.configuration
+            let command = ([config.initProcess.executable] + config.initProcess.arguments)
+                .filter { !$0.isEmpty }.joined(separator: " ")
+            return ContainerDetail(
+                id: snapshot.id,
+                image: config.image.reference,
+                command: command,
+                env: config.initProcess.environment.sorted(),
+                ports: config.publishedPorts.map {
+                    PortBinding(host: Int($0.hostPort), container: Int($0.containerPort), proto: $0.proto.rawValue)
+                },
+                mounts: config.mounts.map { MountBinding(source: $0.source, destination: $0.destination) },
+                startedAt: snapshot.startedDate
+            )
+        } catch {
+            throw ConsaiError.sdk(String(describing: error))
+        }
+    }
+
     // MARK: - Mapping (SDK → Consai)
 
     /// In this SDK the container id *is* its display name (`configuration.id`).

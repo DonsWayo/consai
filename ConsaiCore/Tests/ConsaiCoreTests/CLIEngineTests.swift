@@ -120,6 +120,36 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
     }
 }
 
+@Suite struct ContainerDetailTests {
+    @Test func execCommandBuildsInteractiveShell() {
+        #expect(containerExecCommand(binary: "/usr/local/bin/container", id: "web")
+                == "/usr/local/bin/container exec -it web sh")
+        #expect(containerExecCommand(binary: "container", id: "db", shell: "bash")
+                == "container exec -it db bash")
+    }
+
+    @Test func validatesContainerNamesAndRejectsInjection() {
+        #expect(isValidContainerName("shop-api"))
+        #expect(isValidContainerName("my_db.1"))
+        #expect(!isValidContainerName(""))
+        #expect(!isValidContainerName("-leadingdash"))   // must start alphanumeric
+        // Injection attempts must be rejected before reaching the shell/AppleScript.
+        #expect(!isValidContainerName("web; rm -rf /"))
+        #expect(!isValidContainerName("a$(whoami)"))
+        #expect(!isValidContainerName("a\"; do shell script \"x"))
+        #expect(!isValidContainerName("a b"))
+        #expect(!isValidContainerName("a\nb"))
+    }
+}
+
+@Suite struct FormatBytesTests {
+    @Test func formatsMBAndGB() {
+        #expect(formatBytes(38 * 1_048_576) == "38 MB")
+        #expect(formatBytes(1024 * 1_048_576) == "1.0 GB")
+        #expect(formatBytes(0) == "0 MB")
+    }
+}
+
 @Suite struct CLIServiceHealthTests {
     @Test func parsesNegativeSignalsAsStopped() {
         #expect(CLIServiceHealth.parseStatus(exitCode: 0, output: "apiserver is not running") == .stopped)

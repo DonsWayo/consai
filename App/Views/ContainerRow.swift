@@ -90,6 +90,7 @@ struct ContainerRow: View {
             iconButton("play.fill", "Start") { Task { await appState.start(container.id) } }
         }
         iconButton("doc.text", "Logs") { openWindow(id: "logs", value: container.id) }
+        iconButton("info.circle", "Details") { openWindow(id: "detail", value: container.id) }
         iconButton("trash", "Delete") { confirmingDelete = true }
     }
 
