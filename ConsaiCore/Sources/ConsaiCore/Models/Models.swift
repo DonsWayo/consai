@@ -16,6 +16,8 @@ public struct Container: Identifiable, Hashable, Sendable {
     public var ipAddress: String?
     /// Live resident memory in bytes (best-effort; nil until fetched / when stopped).
     public var memoryBytes: UInt64?
+    /// Live CPU percentage (total across cores; nil until two samples are available).
+    public var cpuPercent: Double?
     public var labels: [String: String]
 
     public init(
@@ -25,6 +27,7 @@ public struct Container: Identifiable, Hashable, Sendable {
         status: ContainerStatus,
         ipAddress: String? = nil,
         memoryBytes: UInt64? = nil,
+        cpuPercent: Double? = nil,
         labels: [String: String] = [:]
     ) {
         self.id = id
@@ -33,8 +36,18 @@ public struct Container: Identifiable, Hashable, Sendable {
         self.status = status
         self.ipAddress = ipAddress
         self.memoryBytes = memoryBytes
+        self.cpuPercent = cpuPercent
         self.labels = labels
     }
+}
+
+/// CPU percentage from two cumulative `cpuUsageUsec` samples over an elapsed wall-clock
+/// window. Total across cores (can exceed 100% on multi-core). Pure for testing.
+public func cpuPercent(previousUsec: UInt64, currentUsec: UInt64, elapsedSeconds: Double) -> Double? {
+    guard elapsedSeconds > 0, currentUsec >= previousUsec else { return nil }
+    let deltaUsec = Double(currentUsec - previousUsec)
+    let windowUsec = elapsedSeconds * 1_000_000
+    return (deltaUsec / windowUsec) * 100
 }
 
 /// Human-readable byte formatting for vitals ("178 MB", "1.0 GB").

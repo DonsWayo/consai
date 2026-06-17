@@ -61,6 +61,10 @@ public struct SDKContainerEngine: ContainerEngine {
         try? await ContainerClient().stats(id: id).memoryUsageBytes
     }
 
+    public func cpuUsage(id: String) async -> UInt64? {
+        try? await ContainerClient().stats(id: id).cpuUsageUsec
+    }
+
     // MARK: - Mapping (SDK → Consai)
 
     /// In this SDK the container id *is* its display name (`configuration.id`).

@@ -23,6 +23,7 @@ final class AppState {
     private var registry: ProjectRegistry
     private var pollTask: Task<Void, Never>?
     private var panelVisible = false
+    private var sampler = VitalsSampler()
 
     var runningCount: Int { containers.filter { $0.status == .running }.count }
     var isServiceRunning: Bool { serviceStatus == .running }
@@ -93,10 +94,13 @@ final class AppState {
             // Preserve an in-flight container's optimistic status so a poll mid-action
             // doesn't flicker it back to the pre-action state. Carry over last-known memory
             // so vitals don't blink to empty between fetches.
+            // Carry last-known vitals so they don't blink to empty between fetches.
             let priorMemory = Dictionary(containers.map { ($0.id, $0.memoryBytes) }, uniquingKeysWith: { a, _ in a })
+            let priorCPU = Dictionary(containers.map { ($0.id, $0.cpuPercent) }, uniquingKeysWith: { a, _ in a })
             containers = fresh.map { incoming in
                 var c = incoming
-                c.memoryBytes = priorMemory[incoming.id] ?? nil
+                if c.memoryBytes == nil { c.memoryBytes = priorMemory[incoming.id] ?? nil }
+                if c.cpuPercent == nil { c.cpuPercent = priorCPU[incoming.id] ?? nil }
                 if inFlight.contains(incoming.id),
                    let existing = containers.first(where: { $0.id == incoming.id }) {
                     c.status = existing.status
@@ -104,25 +108,36 @@ final class AppState {
                 return c
             }
             reassemble()
-            await fetchMemory()
+            await fetchVitals()
         } catch {
             lastError = describe(error)
         }
     }
 
-    /// Concurrently fetch live memory for running containers, then re-assemble. Best-effort.
-    private func fetchMemory() async {
+    /// Concurrently fetch live memory + CPU for running containers, then re-assemble.
+    /// Best-effort: missing values leave the carried-over value in place.
+    private func fetchVitals() async {
         let engine = containerEngine
         let running = containers.filter { $0.status == .running }.map(\.id)
+        sampler.retain(ids: Set(running))
         guard !running.isEmpty else { return }
-        let results = await withTaskGroup(of: (String, UInt64?).self) { group -> [(String, UInt64?)] in
-            for id in running { group.addTask { (id, await engine.memoryUsage(id: id)) } }
-            var out: [(String, UInt64?)] = []
+
+        let results = await withTaskGroup(of: (String, UInt64?, UInt64?).self) { group -> [(String, UInt64?, UInt64?)] in
+            for id in running {
+                group.addTask { (id, await engine.memoryUsage(id: id), await engine.cpuUsage(id: id)) }
+            }
+            var out: [(String, UInt64?, UInt64?)] = []
             for await r in group { out.append(r) }
             return out
         }
-        for (id, mem) in results {
-            if let idx = containers.firstIndex(where: { $0.id == id }) { containers[idx].memoryBytes = mem }
+
+        let now = Date()
+        for (id, mem, cpuUsec) in results {
+            guard let idx = containers.firstIndex(where: { $0.id == id }) else { continue }
+            if let mem { containers[idx].memoryBytes = mem }
+            if let cpuUsec, let pct = sampler.recordCPU(id: id, cumulativeUsec: cpuUsec, at: now) {
+                containers[idx].cpuPercent = pct
+            }
         }
         reassemble()
     }

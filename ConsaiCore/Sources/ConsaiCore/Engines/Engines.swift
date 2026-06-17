@@ -10,6 +10,8 @@ public protocol ContainerEngine: Sendable {
     func delete(id: String) async throws
     /// Best-effort live resident memory in bytes; nil if unavailable.
     func memoryUsage(id: String) async -> UInt64?
+    /// Best-effort cumulative CPU time in microseconds (for delta-based CPU%); nil if unavailable.
+    func cpuUsage(id: String) async -> UInt64?
 }
 
 /// Orchestrates compose stacks by shelling out to the `container-compose` CLI.

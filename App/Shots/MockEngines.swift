@@ -12,6 +12,7 @@ struct MockContainerEngine: ContainerEngine {
     func restart(id: String) async throws {}
     func delete(id: String) async throws {}
     func memoryUsage(id: String) async -> UInt64? { containers.first { $0.id == id }?.memoryBytes }
+    func cpuUsage(id: String) async -> UInt64? { nil }  // cpu% needs sampling; mocks preset cpuPercent
 }
 
 struct MockComposeEngine: ComposeEngine {
