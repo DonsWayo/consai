@@ -18,7 +18,7 @@ struct ImagesWindow: View {
             list
         }
         .frame(minWidth: 520, minHeight: 360)
-        .background(Theme.bg)
+        .consaiSurface()
         .preferredColorScheme(.dark).tint(Theme.jade)
         .navigationTitle("Images")
         .confirmationDialog("Delete image?", isPresented: Binding(

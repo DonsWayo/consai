@@ -33,7 +33,7 @@ struct DetailWindow: View {
             .padding(.bottom, 10)
         }
         .frame(minWidth: 460, minHeight: 360)
-        .background(Theme.bg)
+        .consaiSurface()
         .preferredColorScheme(.dark).tint(Theme.jade)
         .navigationTitle(containerID)
         .toolbar {
