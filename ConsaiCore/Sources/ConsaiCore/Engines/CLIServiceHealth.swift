@@ -52,7 +52,9 @@ public struct CLIServiceHealth: ServiceHealthChecking {
         if text.contains("running") || text.contains("started") {
             return .running
         }
-        return exitCode == 0 ? .running : .stopped
+        // A non-zero exit with no recognizable wording means "couldn't determine",
+        // not "definitely down" — reserve .stopped for the explicit negative signal above.
+        return exitCode == 0 ? .running : .unknown
     }
 
     static func resolveBinary(explicit: String?) -> URL? {

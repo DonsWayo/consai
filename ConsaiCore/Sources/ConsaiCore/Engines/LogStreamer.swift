@@ -5,11 +5,17 @@ import Foundation
 /// stream is cancelled (window closed) or the container's log ends.
 public final class LogStreamer: @unchecked Sendable {
     private let binaryURL: URL?
-    private var process: Process?
-    private var buffer = ""
+    private let lock = NSLock()
+    private var process: Process?      // guarded by `lock`
+    private var buffer = ""            // only touched inside the (serialized) readability handler
 
     public init(binaryPath: String? = nil) {
         self.binaryURL = ContainerBinary.resolve(explicit: binaryPath)
+    }
+
+    private func setProcess(_ proc: Process?) {
+        lock.lock(); defer { lock.unlock() }
+        process = proc
     }
 
     public func stream(id: String, follow: Bool = true) -> AsyncStream<String> {
@@ -28,14 +34,15 @@ public final class LogStreamer: @unchecked Sendable {
 
             let handle = pipe.fileHandleForReading
             handle.readabilityHandler = { [weak self] fh in
+                guard let self else { return }
                 let data = fh.availableData
                 guard !data.isEmpty, let chunk = String(data: data, encoding: .utf8) else { return }
-                // Buffer partial lines so each yielded value is a complete line.
-                self?.buffer += chunk
-                while let nl = self?.buffer.firstIndex(of: "\n") {
-                    let line = String(self!.buffer[..<nl])
-                    self?.buffer.removeSubrange(...nl)
-                    continuation.yield(line)
+                // Buffer partial lines so each yielded value is a complete line. The handler
+                // is invoked serially per file handle, so `buffer` needs no extra locking.
+                self.buffer += chunk
+                while let newline = self.buffer.firstIndex(of: "\n") {
+                    continuation.yield(String(self.buffer[..<newline]))
+                    self.buffer.removeSubrange(...newline)
                 }
             }
             proc.terminationHandler = { _ in
@@ -43,24 +50,31 @@ public final class LogStreamer: @unchecked Sendable {
                 continuation.finish()
             }
 
+            // Publish the process BEFORE running so `stop()` can never observe nil after
+            // an early termination, and so terminationHandler ordering is well-defined.
+            setProcess(proc)
             do {
                 try proc.run()
             } catch {
+                setProcess(nil)
                 continuation.yield("Failed to start log stream: \(error)")
                 continuation.finish()
                 return
             }
-            self.process = proc
 
-            continuation.onTermination = { @Sendable _ in
+            continuation.onTermination = { @Sendable [weak self] _ in
                 handle.readabilityHandler = nil
                 proc.terminationHandler = nil
                 if proc.isRunning { proc.terminate() }
+                self?.setProcess(nil)
             }
         }
     }
 
     public func stop() {
-        if let process, process.isRunning { process.terminate() }
+        lock.lock()
+        let proc = process
+        lock.unlock()
+        if let proc, proc.isRunning { proc.terminate() }
     }
 }

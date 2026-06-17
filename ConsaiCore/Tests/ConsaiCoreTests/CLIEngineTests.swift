@@ -87,6 +87,13 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
         let args = CLIContainerCreator.runArguments(for: NewContainerSpec(image: "redis"))
         #expect(args == ["run", "-d", "redis"])
     }
+
+    @Test func tokenizerHonorsQuotesAndEscapes() {
+        #expect(CLIContainerCreator.tokenize(#"sh -c "echo hello world""#) == ["sh", "-c", "echo hello world"])
+        #expect(CLIContainerCreator.tokenize("echo 'a b'  c") == ["echo", "a b", "c"])
+        #expect(CLIContainerCreator.tokenize(#"a\ b c"#) == ["a b", "c"])
+        #expect(CLIContainerCreator.tokenize("plain command here") == ["plain", "command", "here"])
+    }
 }
 
 @Suite struct CLIServiceHealthTests {
@@ -101,7 +108,8 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
 
     @Test func fallsBackToExitCode() {
         #expect(CLIServiceHealth.parseStatus(exitCode: 0, output: "???") == .running)
-        #expect(CLIServiceHealth.parseStatus(exitCode: 1, output: "???") == .stopped)
+        // Non-zero exit with no recognizable wording = "couldn't determine", not "down".
+        #expect(CLIServiceHealth.parseStatus(exitCode: 1, output: "???") == .unknown)
     }
 
     @Test func startSendsSystemStart() async throws {

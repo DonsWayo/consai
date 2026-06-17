@@ -97,6 +97,11 @@ public struct ProjectRegistry: Codable, Sendable, Equatable {
 
     /// The inferred project candidate for a container name: everything before the last
     /// `"-"`. Returns nil when the name has no `"-"` (cannot be part of a stack).
+    ///
+    /// Heuristic, used only for stacks Consai didn't launch (origin `.inferred`, marked in
+    /// the UI): without the compose file we can't know the real project/service boundary, so
+    /// a service name containing a `-` (e.g. `app-my-svc`) may group imperfectly. Known
+    /// stacks (launched via Consai, matched by exact recorded prefix) are always exact.
     static func inferredProject(from name: String) -> String? {
         guard let idx = name.lastIndex(of: "-"), idx != name.startIndex else { return nil }
         return String(name[name.startIndex..<idx])

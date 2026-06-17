@@ -24,6 +24,10 @@ public struct SDKContainerEngine: ContainerEngine {
     }
 
     public func start(id: String) async throws {
+        // NOTE: start = bootstrap + start (the SDK has no `start(id:)`). If `bootstrap`
+        // succeeds but `start` throws, the container may be left bootstrapped-but-not-running;
+        // the next poll reflects its real state and the user can retry/stop. Revisit if the
+        // SDK adds an atomic start.
         do {
             let process = try await ContainerClient().bootstrap(id: id, stdio: [nil, nil, nil])
             try await process.start()

@@ -81,13 +81,26 @@ final class AppState {
 
     func refresh() async {
         serviceStatus = await serviceHealth.status()
-        guard serviceStatus == .running else {
+        // Only a definite "stopped" clears the list. On `.unknown` we still try to list
+        // (the status wording just wasn't recognized); a real failure surfaces as an error.
+        if serviceStatus == .stopped {
             containers = []
             reassemble()
             return
         }
         do {
-            containers = try await containerEngine.list()
+            let fresh = try await containerEngine.list()
+            // Preserve an in-flight container's optimistic status so a poll mid-action
+            // doesn't flicker it back to the pre-action state.
+            containers = fresh.map { incoming in
+                if inFlight.contains(incoming.id),
+                   let existing = containers.first(where: { $0.id == incoming.id }) {
+                    var merged = incoming
+                    merged.status = existing.status
+                    return merged
+                }
+                return incoming
+            }
             reassemble()
         } catch {
             lastError = describe(error)
@@ -213,13 +226,39 @@ final class AppState {
         await refresh()
     }
 
-    private func persist() { try? store.save(registry) }
+    private func persist() {
+        do {
+            try store.save(registry)
+        } catch {
+            lastError = "Couldn't save project registry: \(error.localizedDescription)"
+        }
+    }
 
-    /// Project name follows `container-compose`'s rule: the compose file's directory name.
-    /// (`container-compose` also honors a `name:` field; we approximate with the dir name,
-    /// which is its fallback and the common case.)
+    /// Project name, matching `container-compose`: the compose file's top-level `name:`
+    /// field if present, else the directory name — with `.`→`_` sanitization either way
+    /// (so `~/my.app/compose.yml` groups as `my_app-<service>`).
     static func projectName(for composeFile: URL) -> String {
-        composeFile.deletingLastPathComponent().lastPathComponent
+        if let explicit = composeProjectName(in: composeFile) { return sanitizeProjectName(explicit) }
+        return sanitizeProjectName(composeFile.deletingLastPathComponent().lastPathComponent)
+    }
+
+    static func sanitizeProjectName(_ name: String) -> String {
+        name.replacingOccurrences(of: ".", with: "_")
+    }
+
+    /// Best-effort scan for a top-level `name:` key in a compose file.
+    static func composeProjectName(in file: URL) -> String? {
+        guard let text = try? String(contentsOf: file, encoding: .utf8) else { return nil }
+        for line in text.split(separator: "\n", omittingEmptySubsequences: true) {
+            guard let first = line.first, first != " ", first != "\t" else { continue } // top-level only
+            guard let range = line.range(of: #"^name:\s*"#, options: .regularExpression) else { continue }
+            var value = String(line[range.upperBound...])
+            if let comment = value.firstIndex(of: "#") { value = String(value[..<comment]) }
+            value = value.trimmingCharacters(in: .whitespaces)
+                .trimmingCharacters(in: CharacterSet(charactersIn: "\"'"))
+            if !value.isEmpty { return value }
+        }
+        return nil
     }
 
     private func describe(_ error: Error) -> String {

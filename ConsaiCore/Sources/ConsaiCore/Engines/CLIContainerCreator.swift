@@ -57,8 +57,35 @@ public struct CLIContainerCreator: ContainerCreating {
         }
         args.append(spec.image)
         if let command = spec.command?.trimmingCharacters(in: .whitespaces), !command.isEmpty {
-            args += command.split(separator: " ").map(String.init)
+            args += tokenize(command)
         }
         return args
+    }
+
+    /// Shell-style tokenizer honoring single/double quotes and backslash escapes, so
+    /// `sh -c "echo hello world"` survives as 3 args, not 4.
+    static func tokenize(_ command: String) -> [String] {
+        var tokens: [String] = []
+        var current = ""
+        var inSingle = false, inDouble = false, hasToken = false
+        var escaped = false
+
+        for ch in command {
+            if escaped {
+                current.append(ch); hasToken = true; escaped = false
+            } else if ch == "\\" && !inSingle {
+                escaped = true; hasToken = true
+            } else if ch == "'" && !inDouble {
+                inSingle.toggle(); hasToken = true
+            } else if ch == "\"" && !inSingle {
+                inDouble.toggle(); hasToken = true
+            } else if ch == " " && !inSingle && !inDouble {
+                if hasToken { tokens.append(current); current = ""; hasToken = false }
+            } else {
+                current.append(ch); hasToken = true
+            }
+        }
+        if hasToken { tokens.append(current) }
+        return tokens
     }
 }

@@ -6,17 +6,17 @@ import AppKit
 struct LogWindow: View {
     let containerID: String
 
+    private struct LogLine: Identifiable { let id: Int; let text: String }
+
     @State private var streamer = LogStreamer()
-    @State private var lines: [String] = []
+    @State private var lines: [LogLine] = []
+    @State private var nextID = 0
     @State private var filter = ""
     @State private var autoscroll = true
     @State private var streamTask: Task<Void, Never>?
 
-    private var visibleLines: [(offset: Int, element: String)] {
-        let filtered = filter.isEmpty
-            ? lines
-            : lines.filter { $0.localizedCaseInsensitiveContains(filter) }
-        return Array(filtered.enumerated())
+    private var visibleLines: [LogLine] {
+        filter.isEmpty ? lines : lines.filter { $0.text.localizedCaseInsensitiveContains(filter) }
     }
 
     var body: some View {
@@ -26,18 +26,18 @@ struct LogWindow: View {
             ScrollViewReader { proxy in
                 ScrollView {
                     LazyVStack(alignment: .leading, spacing: 0) {
-                        ForEach(visibleLines, id: \.offset) { item in
-                            Text(highlighted(item.element))
+                        ForEach(visibleLines) { line in
+                            Text(highlighted(line.text))
                                 .font(.system(.caption, design: .monospaced))
                                 .textSelection(.enabled)
                                 .frame(maxWidth: .infinity, alignment: .leading)
-                                .id(item.offset)
+                                .id(line.id)
                         }
                         Color.clear.frame(height: 1).id("bottom")
                     }
                     .padding(8)
                 }
-                .onChange(of: lines.count) { _, _ in
+                .onChange(of: visibleLines.count) { _, _ in
                     if autoscroll { proxy.scrollTo("bottom", anchor: .bottom) }
                 }
             }
@@ -72,9 +72,10 @@ struct LogWindow: View {
     }
 
     private func start() {
-        streamTask = Task {
+        streamTask = Task { @MainActor in
             for await line in streamer.stream(id: containerID) {
-                lines.append(line)
+                lines.append(LogLine(id: nextID, text: line))
+                nextID += 1
                 if lines.count > 5000 { lines.removeFirst(lines.count - 5000) }
             }
         }
