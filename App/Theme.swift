@@ -18,6 +18,14 @@ enum Theme {
     static let stopDot   = Color(hex: 0x4A514B)   // idle marker
     static let amber     = Color(hex: 0xF2B544)   // transitioning
     static let danger    = Color(hex: 0xE08585)   // error
+    /// Palette for multi-log panes: one distinct accent per container stream.
+    static let logPalette: [Color] = [
+        Color(hex: 0x7CC99A),   // jade
+        Color(hex: 0xF2B544),   // amber
+        Color(hex: 0x9DB8D6),   // sky-blue
+        Color(hex: 0xE08585),   // rose
+        Color(hex: 0xA89BD4),   // lavender
+    ]
 
     static func wordmark(_ size: CGFloat = 17) -> Font { .system(size: size, weight: .bold, design: .rounded) }
     static func mono(_ size: CGFloat = 10.5) -> Font { .system(size: size, design: .monospaced) }
