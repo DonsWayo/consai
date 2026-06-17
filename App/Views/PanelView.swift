@@ -32,6 +32,12 @@ struct PanelView: View {
             if let error = appState.lastError {
                 ErrorBanner(message: error) { appState.clearError() }
             }
+            if let u = appState.containerUpdate {
+                UpdateBanner(update: u)
+            }
+            if let u = appState.composeUpdate {
+                UpdateBanner(update: u)
+            }
 
             content
 
