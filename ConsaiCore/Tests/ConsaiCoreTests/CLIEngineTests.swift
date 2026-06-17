@@ -113,6 +113,13 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
     }
 }
 
+@Suite struct SDKInfraEngineTests {
+    @Test func buildsInfraCommandArgs() {
+        #expect(SDKInfraEngine.networkCreateArgs("backend") == ["network", "create", "backend"])
+        #expect(SDKInfraEngine.volumeDeleteArgs("pgdata") == ["volume", "delete", "pgdata"])
+    }
+}
+
 @Suite struct CLIServiceHealthTests {
     @Test func parsesNegativeSignalsAsStopped() {
         #expect(CLIServiceHealth.parseStatus(exitCode: 0, output: "apiserver is not running") == .stopped)

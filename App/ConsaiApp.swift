@@ -57,6 +57,11 @@ struct ConsaiApp: App {
         }
         .defaultSize(width: 560, height: 420)
 
+        Window("Networks & Volumes", id: "infra") {
+            InfraWindow().environment(appState)
+        }
+        .defaultSize(width: 560, height: 460)
+
         Window("Consai Settings", id: "settings") {
             SettingsWindow().environment(appState)
                 .preferredColorScheme(.dark).tint(Theme.jade)

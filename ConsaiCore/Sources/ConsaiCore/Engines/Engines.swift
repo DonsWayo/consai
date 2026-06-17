@@ -32,6 +32,16 @@ public protocol ImageEngine: Sendable {
     func delete(reference: String) async throws
 }
 
+/// Manages networks and volumes. `list` uses the SDK; create/delete shell out to the CLI.
+public protocol InfraEngine: Sendable {
+    func listNetworks() async throws -> [ContainerNetwork]
+    func createNetwork(name: String) async throws
+    func deleteNetwork(id: String) async throws
+    func listVolumes() async throws -> [ContainerVolume]
+    func createVolume(name: String) async throws
+    func deleteVolume(name: String) async throws
+}
+
 /// Checks/controls the `container` system service.
 /// The concrete `CLIServiceHealth` is implemented in Wave 1.
 public protocol ServiceHealthChecking: Sendable {
