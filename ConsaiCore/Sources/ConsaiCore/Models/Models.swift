@@ -31,7 +31,7 @@ public struct Container: Identifiable, Hashable, Sendable {
 
 /// Whether a stack was launched by Consai (authoritative, has compose file) or merely
 /// inferred from container naming (best-effort, may lack a compose file).
-public enum StackOrigin: Sendable {
+public enum StackOrigin: Sendable, Equatable {
     case launchedByConsai
     case inferred
 }

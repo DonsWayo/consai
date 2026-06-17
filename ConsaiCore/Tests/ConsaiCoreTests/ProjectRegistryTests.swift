@@ -30,6 +30,8 @@ import Foundation
         #expect(result.standalone.first?.name == "lonely")
     }
 
+    // (StackOrigin is Equatable on the model — no retroactive conformance needed.)
+
     @Test func unknownContainersAreStandalone() {
         let registry = ProjectRegistry()
         let containers = [
@@ -38,14 +40,5 @@ import Foundation
         let result = registry.assemble(containers: containers)
         #expect(result.stacks.isEmpty)
         #expect(result.standalone.count == 1)
-    }
-}
-
-extension StackOrigin: @retroactive Equatable {
-    public static func == (lhs: StackOrigin, rhs: StackOrigin) -> Bool {
-        switch (lhs, rhs) {
-        case (.launchedByConsai, .launchedByConsai), (.inferred, .inferred): return true
-        default: return false
-        }
     }
 }
