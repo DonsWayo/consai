@@ -33,10 +33,10 @@ import Foundation
         #expect(result.standalone.count == 1)
     }
 
-    @Test func infersStackFromSharedPrefixWhenTwoOrMore() {
+    @Test func infersStackFromSharedPrefixWhenOptedIn() {
         let result = ProjectRegistry().assemble(containers: [
             c("1", "shop-web"), c("2", "shop-db"), c("3", "shop-cache"),
-        ])
+        ], inferStacks: true)
         #expect(result.stacks.count == 1)
         let stack = try! #require(result.stacks.first)
         #expect(stack.projectName == "shop")
@@ -44,6 +44,15 @@ import Foundation
         #expect(stack.composeFilePath == nil)
         #expect(stack.services.count == 3)
         #expect(result.standalone.isEmpty)
+    }
+
+    @Test func doesNotInferStacksByDefault() {
+        // Default (inference off): unrelated containers sharing a prefix stay standalone (#12).
+        let result = ProjectRegistry().assemble(containers: [
+            c("1", "qa-web"), c("2", "qa-cache"),
+        ])
+        #expect(result.stacks.isEmpty)
+        #expect(result.standalone.map(\.name).sorted() == ["qa-cache", "qa-web"])
     }
 
     @Test func singleHyphenatedContainerIsNotAStack() {

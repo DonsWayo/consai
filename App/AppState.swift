@@ -143,8 +143,11 @@ final class AppState {
     }
 
     /// Recompute stacks + standalone from the current container list and known projects.
+    /// Name-prefix inference for externally-launched containers is opt-in (default off) so
+    /// unrelated containers that merely share a prefix aren't grouped into a fake stack (#12).
     private func reassemble() {
-        let result = registry.assemble(containers: containers)
+        let infer = UserDefaults.standard.bool(forKey: "groupByNamePrefix")
+        let result = registry.assemble(containers: containers, inferStacks: infer)
         stacks = result.stacks
         standalone = result.standalone
     }

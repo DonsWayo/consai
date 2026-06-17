@@ -45,6 +45,18 @@ enum ShotRenderer {
         FileHandle.standardError.write(Data("rendered shots to \(dir.path)\n".utf8))
     }
 
+    /// Capture the panel backed by the REAL AppState (live daemon), for QA/authentic shots.
+    /// Refreshes twice with a gap so CPU% (needs two samples) populates.
+    static func renderLive(to dir: URL) async {
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let state = AppState()
+        await state.refresh()
+        try? await Task.sleep(for: .seconds(2.5))
+        await state.refresh()
+        await shoot(PanelView().environment(state), width: 360, height: 600, name: "live-panel", dir: dir)
+        FileHandle.standardError.write(Data("rendered live panel to \(dir.path)\n".utf8))
+    }
+
     private static func shoot<V: View>(_ view: V, width: CGFloat, height: CGFloat, name: String, dir: URL) async {
         let themed = view.frame(width: width, height: height)
             .preferredColorScheme(.dark).tint(Theme.jade)
