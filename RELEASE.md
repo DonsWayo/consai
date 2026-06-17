@@ -5,12 +5,13 @@ it can reach the `container` XPC daemon and spawn processes. That means releases
 **code-signed with a Developer ID and notarized**, or Gatekeeper will block them.
 
 > These steps require an Apple Developer account / Developer ID certificate, so they are
-> run by a maintainer — not automated in CI. CI only runs the unit tests.
+> run by a maintainer on a local macOS 26 / Xcode 26 machine. There is no hosted CI (Apple's
+> `container` SDK graph can't build on hosted runners) — verify locally with `swift test`.
 
 ## 1. Build + bundle
 
 ```bash
-scripts/bundle.sh release          # → Consai.app (arm64, ad-hoc signed)
+swift run bundle release          # → Consai.app (arm64, ad-hoc signed)
 ```
 
 ## 2. Sign with Developer ID
