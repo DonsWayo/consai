@@ -13,8 +13,29 @@ enum ShotRenderer {
     static func renderAll(to dir: URL) async {
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
 
-        let state = AppState()
-        await state.refresh()   // populate from the live daemon
+        // Mock data so the shots show the full design (a stack + standalone + a resting one).
+        let regDir = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent("consai-shots-\(UUID().uuidString)", isDirectory: true)
+        var registry = ProjectRegistry()
+        registry.record(project: "shop", composeFile: URL(fileURLWithPath: "/Users/you/shop/docker-compose.yml"))
+        let store = RegistryStore(directory: regDir)
+        try? store.save(registry)
+
+        let containers = [
+            Container(id: "shop-web", name: "shop-web", image: "docker.io/library/nginx:latest", status: .running, ipAddress: "10.0.1.4"),
+            Container(id: "shop-api", name: "shop-api", image: "ghcr.io/acme/api:1.4", status: .running, ipAddress: "10.0.1.5"),
+            Container(id: "shop-db", name: "shop-db", image: "postgres:17", status: .running, ipAddress: "10.0.1.6"),
+            Container(id: "conek-pg", name: "conek-pg", image: "ghcr.io/a-safe-digital/postgres-pgvector:pg17", status: .running, ipAddress: "192.168.64.2"),
+            Container(id: "scratch", name: "scratch", image: "docker.io/library/alpine:latest", status: .stopped),
+        ]
+        let state = AppState(
+            containerEngine: MockContainerEngine(containers: containers),
+            composeEngine: MockComposeEngine(isAvailable: true),
+            serviceHealth: MockServiceHealth(value: .running),
+            creator: MockCreator(),
+            store: store
+        )
+        await state.refresh()
 
         await shoot(PanelView().environment(state), width: 360, height: 540, name: "panel", dir: dir)
         await shoot(SettingsWindow().environment(state), width: 460, height: 400, name: "settings", dir: dir)
@@ -24,7 +45,9 @@ enum ShotRenderer {
     }
 
     private static func shoot<V: View>(_ view: V, width: CGFloat, height: CGFloat, name: String, dir: URL) async {
-        let host = NSHostingController(rootView: AnyView(view.frame(width: width, height: height)))
+        let themed = view.frame(width: width, height: height)
+            .preferredColorScheme(.dark).tint(Theme.jade)
+        let host = NSHostingController(rootView: AnyView(themed))
         let window = NSWindow(
             contentRect: NSRect(x: 300, y: 300, width: width, height: height),
             styleMask: [.titled, .fullSizeContentView],
@@ -34,6 +57,7 @@ enum ShotRenderer {
         window.titlebarAppearsTransparent = true
         window.titleVisibility = .hidden
         window.isMovableByWindowBackground = true
+        window.appearance = NSAppearance(named: .darkAqua)   // force dark for Form/system chrome
         window.contentViewController = host
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)

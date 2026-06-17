@@ -36,17 +36,20 @@ struct ConsaiApp: App {
 
         Window("Consai Settings", id: "settings") {
             SettingsWindow().environment(appState)
+                .preferredColorScheme(.dark).tint(Theme.jade)
         }
         .windowResizability(.contentSize)
 
         Window("New Container", id: "create") {
             CreateContainerWindow().environment(appState)
+                .preferredColorScheme(.dark).tint(Theme.jade)
         }
         .windowResizability(.contentSize)
 
         WindowGroup(id: "logs", for: String.self) { $id in
             LogWindow(containerID: id ?? "")
                 .environment(appState)
+                .preferredColorScheme(.dark).tint(Theme.jade)
         }
         .defaultSize(width: 720, height: 460)
     }

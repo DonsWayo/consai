@@ -2,86 +2,100 @@ import SwiftUI
 import ConsaiCore
 import AppKit
 
-/// A collapsible compose-stack group: header (name, running summary, actions) + service rows.
+/// A compose stack as a "plant": a leaf-marked header whose services hang off a branch.
 struct StackSection: View {
     @Environment(AppState.self) private var appState
     let stack: Stack
     @State private var expanded = true
+    @State private var hovering = false
 
     private var busy: Bool { appState.inFlight.contains(stack.projectName) }
     private var allRunning: Bool { stack.total > 0 && stack.runningCount == stack.total }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(spacing: 0) {
             header
-            if expanded {
-                ForEach(stack.services) { container in
-                    ContainerRow(container: container)
-                        .padding(.leading, 12)
-                    Divider()
-                }
-            }
+            if expanded && !stack.services.isEmpty { branch }
         }
+        .padding(.horizontal, 12)
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
-            Button { expanded.toggle() } label: {
+        HStack(spacing: 9) {
+            Button { withAnimation(.easeOut(duration: 0.12)) { expanded.toggle() } } label: {
                 Image(systemName: expanded ? "chevron.down" : "chevron.right")
-                    .font(.caption2).foregroundStyle(.secondary)
-            }
-            .buttonStyle(.borderless)
+                    .font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.dim2)
+                    .frame(width: 10)
+            }.buttonStyle(.plain)
 
-            Circle()
-                .fill(allRunning ? .green : (stack.runningCount > 0 ? .orange : .secondary))
-                .frame(width: 8, height: 8)
+            LeafShape(color: stack.origin == .inferred ? Theme.dim2 : leafColor)
 
-            Text(stack.projectName).font(.subheadline).fontWeight(.medium).lineLimit(1)
+            Text(stack.projectName).font(Theme.ui(14, .semibold)).foregroundStyle(Theme.text)
 
             if stack.origin == .inferred {
-                Text("inferred")
-                    .font(.caption2).padding(.horizontal, 4).padding(.vertical, 1)
-                    .background(.secondary.opacity(0.15), in: Capsule())
-                    .help("Not launched by Consai — link a compose file to manage it")
+                Text("wild").font(Theme.mono(9)).foregroundStyle(Theme.dim2)
+                    .padding(.horizontal, 5).padding(.vertical, 1)
+                    .background(Theme.hairline, in: Capsule())
+                    .help("Not planted by Consai — link a compose file to tend it")
             }
 
-            Text("\(stack.runningCount)/\(stack.total)")
-                .font(.caption).foregroundStyle(.secondary)
-
-            Spacer()
+            Spacer(minLength: 8)
 
             if busy {
                 ProgressView().controlSize(.small)
-            } else {
+            } else if hovering {
                 actions
+            } else {
+                Text("\(stack.runningCount) of \(max(stack.total, stack.runningCount))")
+                    .font(Theme.mono(11)).foregroundStyle(Theme.dim)
             }
         }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(.secondary.opacity(0.06))
+        .padding(.vertical, 8).padding(.horizontal, 6)
+        .contentShape(Rectangle())
+        .onHover { hovering = $0 }
+    }
+
+    private var leafColor: Color { allRunning ? Theme.jade : (stack.runningCount > 0 ? Theme.amber : Theme.stopDot) }
+
+    private var branch: some View {
+        HStack(alignment: .top, spacing: 0) {
+            Rectangle().fill(Theme.hairline).frame(width: 1.5).padding(.vertical, 3)
+            VStack(spacing: 0) {
+                ForEach(stack.services) { service in
+                    HStack(spacing: 0) {
+                        Rectangle().fill(Theme.hairline).frame(width: 14, height: 1.5)
+                        ContainerRow(container: service)
+                    }
+                }
+            }
+            .padding(.leading, 2)
+        }
+        .padding(.leading, 10)
     }
 
     @ViewBuilder
     private var actions: some View {
         if appState.composeAvailable, let path = stack.composeFilePath {
             let file = URL(fileURLWithPath: path)
-            iconButton("play.fill", "Up") { Task { await appState.composeUp(file: file) } }
-            iconButton("stop.fill", "Down") { Task { await appState.composeDown(stack) } }
-            iconButton("folder", "Reveal compose file") {
+            stackButton("play.fill", "Up") { Task { await appState.composeUp(file: file) } }
+            stackButton("stop.fill", "Down") { Task { await appState.composeDown(stack) } }
+            stackButton("folder", "Reveal compose file") {
                 NSWorkspace.shared.activateFileViewerSelecting([file])
             }
         } else if stack.origin == .inferred {
-            iconButton("link", "Link compose file…") { linkComposeFile() }
+            stackButton("link", "Link compose file…") {
+                if let file = ComposeFilePicker.pick() {
+                    appState.linkComposeFile(project: stack.projectName, file: file)
+                }
+            }
         }
     }
 
-    private func iconButton(_ symbol: String, _ help: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol) }
-            .buttonStyle(.borderless).help(help)
-    }
-
-    private func linkComposeFile() {
-        guard let file = ComposeFilePicker.pick() else { return }
-        appState.linkComposeFile(project: stack.projectName, file: file)
+    private func stackButton(_ symbol: String, _ help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 11)).frame(width: 20, height: 20)
+        }
+        .buttonStyle(.plain).foregroundStyle(Theme.dim).help(help)
     }
 }
 

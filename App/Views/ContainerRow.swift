@@ -1,7 +1,8 @@
 import SwiftUI
 import ConsaiCore
 
-/// One container row: status dot, name/image, and hover quick actions.
+/// One container row (used standalone and inside a stack branch): living dot, name + image,
+/// and IP/state vitals on the right; hover reveals quick actions.
 struct ContainerRow: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openWindow) private var openWindow
@@ -16,24 +17,51 @@ struct ContainerRow: View {
             StatusDot(status: container.status)
 
             VStack(alignment: .leading, spacing: 1) {
-                Text(container.name).font(.system(.body, design: .default)).lineLimit(1)
-                Text(container.image).font(.caption).foregroundStyle(.secondary).lineLimit(1)
+                Text(container.name)
+                    .font(Theme.ui(13, .medium))
+                    .foregroundStyle(container.status == .stopped ? Theme.dim : Theme.text)
+                    .lineLimit(1)
+                Text(container.image)
+                    .font(Theme.mono(10.5))
+                    .foregroundStyle(Theme.dim2)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
             }
-            Spacer()
+
+            Spacer(minLength: 8)
 
             if busy {
                 ProgressView().controlSize(.small)
             } else if hovering {
                 actions
+            } else {
+                vitals
             }
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
+        .padding(.vertical, 7)
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
         .confirmationDialog("Delete \(container.name)?", isPresented: $confirmingDelete) {
             Button("Delete", role: .destructive) { Task { await appState.delete(container.id) } }
             Button("Cancel", role: .cancel) {}
+        }
+    }
+
+    @ViewBuilder
+    private var vitals: some View {
+        switch container.status {
+        case .running:
+            if let ip = container.ipAddress {
+                Text(ip).font(Theme.mono(10)).foregroundStyle(Theme.ip)
+            } else {
+                Text("alive").font(Theme.mono(10)).foregroundStyle(Theme.jade)
+            }
+        case .stopped:
+            Text("resting").font(Theme.mono(10)).foregroundStyle(Theme.dim2)
+        case .starting, .stopping:
+            Text(container.status.rawValue).font(Theme.mono(10)).foregroundStyle(Theme.amber)
+        case .unknown:
+            Text("?").font(Theme.mono(10)).foregroundStyle(Theme.danger)
         }
     }
 
@@ -50,27 +78,35 @@ struct ContainerRow: View {
     }
 
     private func iconButton(_ symbol: String, _ help: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) { Image(systemName: symbol) }
-            .buttonStyle(.borderless)
-            .help(help)
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 11)).frame(width: 20, height: 20)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Theme.dim)
+        .help(help)
     }
 }
 
-/// Color-coded status indicator.
+/// A living status indicator — jade when alive, amber transitioning, dim at rest.
 struct StatusDot: View {
     let status: ContainerStatus
 
     private var color: Color {
         switch status {
-        case .running: return .green
-        case .stopped: return .secondary
-        case .starting, .stopping: return .orange
-        case .unknown: return .red
+        case .running: return Theme.jade
+        case .starting, .stopping: return Theme.amber
+        case .stopped: return Theme.stopDot
+        case .unknown: return Theme.danger
         }
     }
 
     var body: some View {
-        Circle().fill(color).frame(width: 8, height: 8)
+        Circle()
+            .fill(color)
+            .frame(width: 6, height: 6)
+            .overlay(
+                Circle().fill(color.opacity(status == .running ? 0.18 : 0)).frame(width: 12, height: 12)
+            )
             .help(status.rawValue)
     }
 }

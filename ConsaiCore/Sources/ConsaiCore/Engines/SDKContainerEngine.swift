@@ -61,11 +61,16 @@ public struct SDKContainerEngine: ContainerEngine {
 
     /// In this SDK the container id *is* its display name (`configuration.id`).
     static func map(_ snapshot: ContainerSnapshot) -> Container {
-        Container(
+        // `ipv4Address` is a CIDRv4 ("192.168.64.2/24"); show just the address.
+        let ip = snapshot.networks.first.map {
+            String(describing: $0.ipv4Address).components(separatedBy: "/").first ?? ""
+        }
+        return Container(
             id: snapshot.id,
             name: snapshot.id,
             image: snapshot.configuration.image.reference,
             status: mapStatus(snapshot.status.rawValue),
+            ipAddress: (ip?.isEmpty == false) ? ip : nil,
             labels: snapshot.configuration.labels
         )
     }

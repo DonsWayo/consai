@@ -12,6 +12,8 @@ public struct Container: Identifiable, Hashable, Sendable {
     public var name: String
     public var image: String
     public var status: ContainerStatus
+    /// Primary IPv4 address (Apple gives every container its own), without the CIDR suffix.
+    public var ipAddress: String?
     public var labels: [String: String]
 
     public init(
@@ -19,12 +21,14 @@ public struct Container: Identifiable, Hashable, Sendable {
         name: String,
         image: String,
         status: ContainerStatus,
+        ipAddress: String? = nil,
         labels: [String: String] = [:]
     ) {
         self.id = id
         self.name = name
         self.image = image
         self.status = status
+        self.ipAddress = ipAddress
         self.labels = labels
     }
 }

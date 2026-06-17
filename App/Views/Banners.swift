@@ -7,37 +7,37 @@ struct ServiceBanner: View {
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(.orange)
-            Text("Container service not running").font(.callout)
+            Image(systemName: "exclamationmark.triangle.fill").foregroundStyle(Theme.amber)
+            Text("Container service asleep").font(Theme.ui(12)).foregroundStyle(Theme.text)
             Spacer()
             Button {
                 starting = true
                 Task { await appState.startService(); starting = false }
             } label: {
-                if starting { ProgressView().controlSize(.small) } else { Text("Start") }
+                if starting { ProgressView().controlSize(.small) } else { Text("Wake").font(Theme.ui(12, .medium)) }
             }
-            .controlSize(.small)
-            .disabled(starting)
+            .buttonStyle(.plain).foregroundStyle(Theme.jade).disabled(starting)
         }
-        .padding(.horizontal, 12).padding(.vertical, 8)
-        .background(.orange.opacity(0.12))
+        .padding(.horizontal, 16).padding(.vertical, 9)
+        .background(Theme.amber.opacity(0.10))
     }
 }
 
-/// Transient error surface (replaced by a richer toast system in Wave 5).
+/// Transient error surface.
 struct ErrorBanner: View {
     let message: String
     let dismiss: () -> Void
 
     var body: some View {
         HStack(spacing: 8) {
-            Image(systemName: "xmark.octagon.fill").foregroundStyle(.red)
-            Text(message).font(.caption).lineLimit(2)
+            Image(systemName: "xmark.octagon.fill").foregroundStyle(Theme.danger)
+            Text(message).font(Theme.mono(10.5)).foregroundStyle(Theme.text).lineLimit(2)
             Spacer()
-            Button(action: dismiss) { Image(systemName: "xmark") }.buttonStyle(.borderless)
+            Button(action: dismiss) { Image(systemName: "xmark").font(.system(size: 10)) }
+                .buttonStyle(.plain).foregroundStyle(Theme.dim)
         }
-        .padding(.horizontal, 12).padding(.vertical, 6)
-        .background(.red.opacity(0.1))
+        .padding(.horizontal, 16).padding(.vertical, 7)
+        .background(Theme.danger.opacity(0.10))
     }
 }
 
@@ -48,13 +48,13 @@ struct EmptyState: View {
     let subtitle: String
 
     var body: some View {
-        VStack(spacing: 6) {
-            Image(systemName: symbol).font(.largeTitle).foregroundStyle(.secondary)
-            Text(title).font(.headline)
-            Text(subtitle).font(.caption).foregroundStyle(.secondary)
+        VStack(spacing: 7) {
+            Image(systemName: symbol).font(.system(size: 26)).foregroundStyle(Theme.dim2)
+            Text(title).font(Theme.ui(14, .semibold)).foregroundStyle(Theme.text)
+            Text(subtitle).font(Theme.ui(11)).foregroundStyle(Theme.dim)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 36).padding(.horizontal, 24)
+        .padding(.vertical, 40).padding(.horizontal, 28)
     }
 }

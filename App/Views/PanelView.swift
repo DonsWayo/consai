@@ -1,116 +1,129 @@
 import SwiftUI
 import ConsaiCore
 
-/// The menu bar dropdown panel. Header + service banner + container list.
+/// The menu bar panel — Bonsai look: mark + wordmark, leaf-marked stacks on branches,
+/// standalone containers, a tend-the-garden footer.
 struct PanelView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.openWindow) private var openWindow
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        VStack(spacing: 0) {
             header
-            Divider()
+            Rectangle().fill(Theme.hairline).frame(height: 0.5)
 
             if !appState.isServiceRunning {
                 ServiceBanner()
             }
-
             if let error = appState.lastError {
                 ErrorBanner(message: error) { appState.clearError() }
             }
 
             content
+
+            Rectangle().fill(Theme.hairline).frame(height: 0.5)
+            footer
         }
-        .frame(width: 360)
-        .frame(maxHeight: 520)
+        .frame(width: Theme.panelWidth)
+        .frame(maxHeight: 560)
+        .background(Theme.bg)
+        .preferredColorScheme(.dark)
+        .tint(Theme.jade)
         .onAppear { appState.setPanelVisible(true) }
         .onDisappear { appState.setPanelVisible(false) }
     }
 
     private var header: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "shippingbox.fill").foregroundStyle(.tint)
-            Text("Consai").font(.headline)
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 9, style: .continuous)
+                .fill(RadialGradient(colors: [Theme.jadeLite, Theme.jadeDeep],
+                                     center: .init(x: 0.35, y: 0.3), startRadius: 1, endRadius: 26))
+                .frame(width: 26, height: 26)
+                .overlay(Text("心").font(.system(size: 13, weight: .bold)).foregroundStyle(Color(hex: 0x0E2A1D)))
+
+            Text("Consai").font(Theme.wordmark(17)).foregroundStyle(Theme.text)
+
+            Spacer(minLength: 8)
+
             if appState.isServiceRunning {
-                Text("\(appState.runningCount) running")
-                    .font(.caption).foregroundStyle(.secondary)
+                HStack(spacing: 5) {
+                    Text("\(appState.runningCount) alive").font(Theme.mono(11)).foregroundStyle(Theme.jade)
+                    Text("· \(appState.containers.count) total").font(Theme.mono(11)).foregroundStyle(Theme.dim)
+                }
             }
-            Spacer()
-            Button { openWindow(id: "create") } label: { Image(systemName: "plus") }
-                .buttonStyle(.borderless)
-                .help("New container…")
-            if appState.composeAvailable {
-                Button { composeUp() } label: { Image(systemName: "square.stack.3d.up") }
-                    .buttonStyle(.borderless)
-                    .help("Start a compose stack…")
-            }
-            Button {
-                Task { await appState.refresh() }
-            } label: {
-                Image(systemName: "arrow.clockwise")
-            }
-            .buttonStyle(.borderless)
-            .help("Refresh")
-
-            Button { openWindow(id: "settings") } label: { Image(systemName: "gearshape") }
-                .buttonStyle(.borderless)
-                .help("Settings")
         }
-        .padding(12)
-    }
-
-    private func composeUp() {
-        guard let file = ComposeFilePicker.pick() else { return }
-        Task { await appState.composeUp(file: file) }
+        .padding(.horizontal, 16).padding(.top, 15).padding(.bottom, 12)
     }
 
     @ViewBuilder
     private var content: some View {
         if !appState.isServiceRunning {
-            EmptyState(symbol: "bolt.slash", title: "Service not running",
-                       subtitle: "Start the container service to manage containers.")
+            EmptyState(symbol: "leaf", title: "Garden's asleep",
+                       subtitle: "Start the container service to tend your containers.")
         } else if appState.stacks.isEmpty && appState.standalone.isEmpty {
-            EmptyState(symbol: "shippingbox", title: "No containers",
+            EmptyState(symbol: "leaf", title: "Nothing growing yet",
                        subtitle: appState.composeAvailable
-                        ? "Run a container, or start a compose stack with the ⊟ button."
-                        : "Containers you create or run will show up here.")
+                        ? "Grow a container, or raise a stack from the footer."
+                        : "Containers you run will appear here.")
         } else {
             ScrollView {
-                LazyVStack(spacing: 0) {
-                    ForEach(appState.stacks) { stack in
-                        StackSection(stack: stack)
+                LazyVStack(alignment: .leading, spacing: 0) {
+                    if !appState.stacks.isEmpty {
+                        sectionLabel("STACKS")
+                        ForEach(appState.stacks) { StackSection(stack: $0) }
                     }
                     if !appState.standalone.isEmpty {
-                        if !appState.stacks.isEmpty {
-                            sectionLabel("Containers")
-                        }
+                        sectionLabel("CONTAINERS")
                         ForEach(appState.standalone) { container in
                             ContainerRow(container: container)
-                            Divider()
+                                .padding(.horizontal, 18)
                         }
                     }
+                    if !appState.composeAvailable { composeHint }
                 }
-            }
-            if !appState.composeAvailable {
-                composeHint
+                .padding(.bottom, 6)
             }
         }
     }
 
     private func sectionLabel(_ text: String) -> some View {
-        Text(text.uppercased())
-            .font(.caption2).foregroundStyle(.secondary)
+        Text(text)
+            .font(Theme.sectionLabel).tracking(2).foregroundStyle(Theme.dim2)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, 12).padding(.top, 8).padding(.bottom, 2)
+            .padding(.horizontal, 18).padding(.top, 10).padding(.bottom, 4)
     }
 
     private var composeHint: some View {
         HStack(spacing: 6) {
             Image(systemName: "info.circle")
-            Text("Install `container-compose` for stack management")
-                .font(.caption2)
+            Text("Install container-compose for stacks").font(Theme.mono(10))
         }
-        .foregroundStyle(.secondary)
-        .padding(.horizontal, 12).padding(.vertical, 6)
+        .foregroundStyle(Theme.dim2)
+        .padding(.horizontal, 18).padding(.vertical, 8)
+    }
+
+    private var footer: some View {
+        HStack(spacing: 16) {
+            footerButton("plus", "Grow") { openWindow(id: "create") }
+            if appState.composeAvailable {
+                footerButton("square.stack.3d.up", "Stack") {
+                    if let file = ComposeFilePicker.pick() { Task { await appState.composeUp(file: file) } }
+                }
+            }
+            Spacer()
+            footerButton("arrow.clockwise", nil) { Task { await appState.refresh() } }
+            footerButton("gearshape", "Tend") { openWindow(id: "settings") }
+        }
+        .padding(.horizontal, 16).padding(.vertical, 11)
+    }
+
+    private func footerButton(_ symbol: String, _ title: String?, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 5) {
+                Image(systemName: symbol).font(.system(size: 12))
+                if let title { Text(title).font(Theme.ui(12)) }
+            }
+        }
+        .buttonStyle(.plain).foregroundStyle(Theme.dim)
     }
 }

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Consai — redesign mockup</title>
+<style>
+  :root{
+    --bg: rgba(28,28,30,.72);
+    --hair: rgba(255,255,255,.08);
+    --row-hover: rgba(255,255,255,.06);
+    --txt: #F2F2F7;
+    --dim: #8E8E93;
+    --dim2: #6A6A6E;
+    --jade: #5BBF8A;
+    --slate: #7C9CC4;
+    --amber: #F2B544;
+    --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    --ui: -apple-system, "SF Pro Text", "Inter", system-ui, sans-serif;
+    --round: "SF Pro Rounded", "SF Pro Display", var(--ui);
+  }
+  *{box-sizing:border-box; margin:0; padding:0}
+  body{
+    min-height:100vh; display:grid; place-items:center;
+    /* faux desktop so the panel's translucency reads */
+    background:
+      radial-gradient(1200px 800px at 20% 10%, #3a4a63 0%, transparent 55%),
+      radial-gradient(900px 700px at 90% 90%, #5a3f52 0%, transparent 55%),
+      linear-gradient(135deg, #20242b, #161a20);
+    font-family:var(--ui); color:var(--txt);
+    -webkit-font-smoothing:antialiased; padding:40px;
+  }
+  .panel{
+    width:380px; background:var(--bg);
+    -webkit-backdrop-filter:blur(40px) saturate(160%); backdrop-filter:blur(40px) saturate(160%);
+    border:.5px solid var(--hair); border-radius:14px; overflow:hidden;
+    box-shadow:0 18px 50px rgba(0,0,0,.45), 0 0 0 .5px rgba(255,255,255,.04) inset;
+  }
+  /* header */
+  .head{display:flex; align-items:center; gap:9px; padding:12px 13px 11px}
+  .mark{width:22px; height:22px; border-radius:7px; display:grid; place-items:center;
+    background:linear-gradient(160deg,#6fcf9e,#3f9d76); box-shadow:0 1px 0 rgba(255,255,255,.25) inset}
+  .mark svg{width:13px; height:13px; fill:#0e2a1d}
+  .word{font-family:var(--round); font-weight:600; font-size:15px; letter-spacing:.2px}
+  .gvitals{margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--dim);
+    letter-spacing:.2px; display:flex; gap:6px; align-items:center}
+  .gvitals b{color:var(--jade); font-weight:600}
+  .htools{display:flex; gap:2px; margin-left:10px}
+  .ic{width:24px; height:24px; border-radius:6px; display:grid; place-items:center; color:var(--dim);
+    cursor:default}
+  .ic:hover{background:var(--row-hover); color:var(--txt)}
+  .ic svg{width:14px; height:14px; stroke:currentColor; fill:none; stroke-width:1.6}
+  .sep{height:.5px; background:var(--hair)}
+  /* section label */
+  .label{font-size:9.5px; font-weight:600; letter-spacing:1.4px; color:var(--dim2);
+    padding:10px 14px 4px}
+  /* stack card */
+  .stack{margin:2px 8px 4px; border:.5px solid var(--hair); border-radius:10px; overflow:hidden;
+    background:rgba(255,255,255,.018)}
+  .stack-head{display:flex; align-items:center; gap:8px; padding:8px 10px;
+    background:rgba(255,255,255,.025)}
+  .chev{color:var(--dim2); font-size:10px; width:10px}
+  .dot{width:7px; height:7px; border-radius:50%; flex:none}
+  .dot.run{background:var(--jade); box-shadow:0 0 0 3px rgba(91,191,138,.18)}
+  .dot.mix{background:var(--amber)}
+  .dot.stop{background:var(--dim2)}
+  .stack-name{font-weight:600; font-size:13px}
+  .stack-vitals{margin-left:auto; font-family:var(--mono); font-size:10.5px; color:var(--dim)}
+  /* rows */
+  .row{display:flex; align-items:center; gap:9px; padding:7px 12px; position:relative}
+  .row:hover{background:var(--row-hover)}
+  .row + .row, .svc + .svc{border-top:.5px solid var(--hair)}
+  .svc{padding-left:20px}
+  .pill{font-family:var(--mono); font-size:9px; font-weight:600; letter-spacing:.3px;
+    padding:2px 6px; border-radius:5px; text-transform:uppercase}
+  .pill.run{color:var(--jade); background:rgba(91,191,138,.14)}
+  .pill.stop{color:var(--dim); background:rgba(142,142,147,.14)}
+  .meta{min-width:0; flex:1}
+  .name{font-size:12.5px; font-weight:500; line-height:1.25}
+  .img{font-family:var(--mono); font-size:10px; color:var(--dim2); white-space:nowrap;
+    overflow:hidden; text-overflow:ellipsis; max-width:185px; direction:rtl; text-align:left}
+  .vit{font-family:var(--mono); font-size:10px; color:var(--dim); text-align:right; line-height:1.3}
+  .vit .ip{color:var(--slate)}
+  .vit .cpu{color:var(--txt)}
+  .row .actions{position:absolute; right:10px; display:none; gap:1px; align-items:center;
+    background:linear-gradient(90deg, transparent, var(--bg) 22%); padding-left:30px}
+  .row.hovered .actions{display:flex}
+  .row.hovered .vit{visibility:hidden}
+  .actions .ic{width:22px; height:22px}
+  /* footer */
+  .foot{display:flex; align-items:center; gap:4px; padding:8px 10px; border-top:.5px solid var(--hair)}
+  .fbtn{display:flex; align-items:center; gap:5px; font-size:11px; color:var(--dim);
+    padding:4px 7px; border-radius:6px; cursor:default}
+  .fbtn:hover{background:var(--row-hover); color:var(--txt)}
+  .fbtn svg{width:13px; height:13px; stroke:currentColor; fill:none; stroke-width:1.6}
+  .khint{margin-left:auto; font-family:var(--mono); font-size:10px; color:var(--dim2)}
+  .caption{margin-top:18px; font-family:var(--mono); font-size:11px; color:#aeb6c2; text-align:center}
+</style>
+</head>
+<body>
+  <div class="panel">
+    <!-- header -->
+    <div class="head">
+      <div class="mark"><svg viewBox="0 0 24 24"><path d="M3 7l9-4 9 4-9 4-9-4zm0 5l9 4 9-4M3 17l9 4 9-4"/></svg></div>
+      <div class="word">Consai</div>
+      <div class="gvitals"><b>4 running</b><span>·</span>7%<span>·</span>1.4 GB</div>
+      <div class="htools">
+        <div class="ic" title="New container"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></div>
+        <div class="ic" title="Compose up"><svg viewBox="0 0 24 24"><path d="M12 3l8 4-8 4-8-4 8-4zM4 11l8 4 8-4M4 15l8 4 8-4"/></svg></div>
+        <div class="ic" title="Settings"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3M5 5l2 2M17 17l2 2M19 5l-2 2M7 17l-2 2"/></svg></div>
+      </div>
+    </div>
+    <div class="sep"></div>
+
+    <!-- stacks -->
+    <div class="label">STACKS</div>
+    <div class="stack">
+      <div class="stack-head">
+        <span class="chev">▾</span><span class="dot run"></span>
+        <span class="stack-name">shop</span>
+        <span class="stack-vitals">3/3 · 8% · 412 MB</span>
+      </div>
+      <div class="row svc">
+        <span class="pill run">run</span>
+        <div class="meta"><div class="name">web</div><div class="img">docker.io/library/nginx:latest</div></div>
+        <div class="vit"><span class="ip">10.0.1.4</span> · <span class="cpu">2%</span> · 38 MB</div>
+      </div>
+      <div class="row svc hovered">
+        <span class="pill run">run</span>
+        <div class="meta"><div class="name">api</div><div class="img">ghcr.io/acme/api:1.4</div></div>
+        <div class="vit"><span class="ip">10.0.1.5</span> · <span class="cpu">5%</span> · 196 MB</div>
+        <div class="actions">
+          <div class="ic" title="Stop"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="2"/></svg></div>
+          <div class="ic" title="Restart"><svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7M21 4v5h-5"/></svg></div>
+          <div class="ic" title="Logs"><svg viewBox="0 0 24 24"><path d="M5 4h14v16H5zM8 9h8M8 13h8M8 17h5"/></svg></div>
+        </div>
+      </div>
+      <div class="row svc">
+        <span class="pill run">run</span>
+        <div class="meta"><div class="name">db</div><div class="img">postgres:17</div></div>
+        <div class="vit"><span class="ip">10.0.1.6</span> · <span class="cpu">1%</span> · 178 MB</div>
+      </div>
+    </div>
+
+    <!-- standalone -->
+    <div class="label">CONTAINERS</div>
+    <div class="row">
+      <span class="pill run">run</span>
+      <div class="meta"><div class="name">conek-pg</div><div class="img">ghcr.io/a-safe-digital/postgres-pgvector:pg17</div></div>
+      <div class="vit"><span class="ip">192.168.64.2</span> · <span class="cpu">3%</span> · 1.0 GB</div>
+    </div>
+    <div class="row">
+      <span class="pill stop">stop</span>
+      <div class="meta"><div class="name" style="color:var(--dim)">scratch</div><div class="img">alpine:latest</div></div>
+      <div class="vit" style="color:var(--dim2)">—</div>
+    </div>
+
+    <!-- footer -->
+    <div class="foot">
+      <div class="fbtn"><svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>New</div>
+      <div class="fbtn"><svg viewBox="0 0 24 24"><path d="M12 3l8 4-8 4-8-4z"/></svg>Stack</div>
+      <div class="khint">⌥⌘C</div>
+    </div>
+  </div>
+  <div class="caption">Consai · "instrument panel" redesign — mono data, semantic color, native vibrancy</div>
+</body>
+</html>

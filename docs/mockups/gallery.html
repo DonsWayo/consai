@@ -1,0 +1,167 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Consai — design directions</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{min-height:100vh;background:#0c0e12;color:#e8eaed;
+    font-family:-apple-system,"SF Pro Text",system-ui,sans-serif;padding:36px;
+    -webkit-font-smoothing:antialiased}
+  h1{font-size:18px;font-weight:600;margin-bottom:4px}
+  .sub{color:#8a909a;font-size:13px;margin-bottom:26px}
+  .grid{display:grid;grid-template-columns:repeat(2,380px);gap:30px 34px;align-items:start}
+  .cell{display:flex;flex-direction:column;gap:10px}
+  .cap{font-size:12px;color:#aeb6c2}
+  .cap b{color:#fff;font-weight:600}
+  .cap .tag{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#6a7280;
+    border:.5px solid #2a2f37;border-radius:4px;padding:1px 5px;margin-right:7px}
+  .mono{font-family:ui-monospace,"SF Mono",Menlo,monospace}
+
+  /* ============ A · INSTRUMENT (dark vibrancy) ============ */
+  .A{width:380px;border-radius:14px;overflow:hidden;background:rgba(28,28,30,.92);
+    border:.5px solid rgba(255,255,255,.08);box-shadow:0 16px 40px rgba(0,0,0,.5)}
+  .A .h{display:flex;align-items:center;gap:9px;padding:12px 13px}
+  .A .mk{width:22px;height:22px;border-radius:7px;background:linear-gradient(160deg,#6fcf9e,#3f9d76)}
+  .A .w{font-weight:600;font-size:15px}
+  .A .gv{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#8e8e93}
+  .A .gv b{color:#5BBF8A}
+  .A .lab{font-size:9.5px;font-weight:600;letter-spacing:1.4px;color:#6A6A6E;padding:9px 14px 4px}
+  .A .card{margin:2px 8px;border:.5px solid rgba(255,255,255,.08);border-radius:10px;overflow:hidden}
+  .A .sh{display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.03)}
+  .A .sn{font-weight:600;font-size:13px}.A .sv{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10.5px;color:#8e8e93}
+  .A .r{display:flex;align-items:center;gap:9px;padding:7px 12px;border-top:.5px solid rgba(255,255,255,.06)}
+  .A .svc{padding-left:20px}
+  .A .pill{font-family:ui-monospace,Menlo,monospace;font-size:9px;font-weight:700;padding:2px 6px;border-radius:5px;text-transform:uppercase}
+  .A .pill.run{color:#5BBF8A;background:rgba(91,191,138,.14)}.A .pill.stop{color:#8e8e93;background:rgba(142,142,147,.14)}
+  .A .nm{font-size:12.5px;font-weight:500}.A .im{font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#6A6A6E;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:175px}
+  .A .vt{margin-left:auto;font-family:ui-monospace,Menlo,monospace;font-size:10px;color:#8e8e93;text-align:right}
+  .A .vt .ip{color:#7C9CC4}.A .dot{width:7px;height:7px;border-radius:50%;background:#5BBF8A}
+  .A .ft{display:flex;gap:14px;padding:9px 13px;border-top:.5px solid rgba(255,255,255,.08);font-size:11px;color:#8e8e93}
+
+  /* ============ B · DAYLIGHT (light, native) ============ */
+  .B{width:380px;border-radius:14px;overflow:hidden;background:rgba(248,248,250,.98);color:#1c1c1e;
+    border:.5px solid rgba(0,0,0,.1);box-shadow:0 16px 40px rgba(0,0,0,.35)}
+  .B .h{display:flex;align-items:center;gap:9px;padding:13px 14px;border-bottom:.5px solid rgba(0,0,0,.08)}
+  .B .mk{width:22px;height:22px;border-radius:7px;background:linear-gradient(160deg,#34c759,#28a048)}
+  .B .w{font-weight:600;font-size:15px}.B .gv{margin-left:auto;font-size:12px;color:#8a8a8e}.B .gv b{color:#1c1c1e}
+  .B .lab{font-size:11px;font-weight:600;color:#8a8a8e;padding:11px 15px 5px}
+  .B .r{display:flex;align-items:center;gap:11px;padding:9px 15px;border-bottom:.5px solid rgba(0,0,0,.05)}
+  .B .svc{padding-left:30px}
+  .B .dot{width:8px;height:8px;border-radius:50%;flex:none}.B .dot.run{background:#34c759}.B .dot.stop{background:#c7c7cc}
+  .B .nm{font-size:13px;font-weight:500}.B .im{font-size:11px;color:#a0a0a6;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:185px}
+  .B .vt{margin-left:auto;font-size:11px;color:#8a8a8e;text-align:right}.B .vt .ip{color:#0a84ff}
+  .B .grp{font-size:13px;font-weight:600}.B .gc{margin-left:auto;font-size:11px;color:#8a8a8e}
+  .B .ft{display:flex;gap:16px;padding:11px 15px;font-size:12px;color:#0a84ff}
+
+  /* ============ C · TERMINAL (TUI) ============ */
+  .C{width:380px;border-radius:10px;overflow:hidden;background:#0d1117;border:1px solid #1f2630;
+    font-family:ui-monospace,"SF Mono",Menlo,monospace;box-shadow:0 16px 40px rgba(0,0,0,.6)}
+  .C .h{display:flex;gap:8px;padding:9px 12px;font-size:11px;color:#6e7681;border-bottom:1px solid #1f2630;background:#10161e}
+  .C .h b{color:#3fb950}.C .h .sp{margin-left:auto;color:#484f58}
+  .C .grp{padding:7px 12px 3px;font-size:10px;color:#484f58;letter-spacing:1px}
+  .C .r{display:flex;gap:10px;padding:4px 12px;font-size:11.5px;white-space:nowrap}
+  .C .r:hover{background:#161c24}
+  .C .st{width:46px}.C .st.run{color:#3fb950}.C .st.stop{color:#6e7681}
+  .C .nm{width:90px;color:#e6edf3;overflow:hidden;text-overflow:ellipsis}
+  .C .ip{width:96px;color:#58a6ff}.C .cpu{width:34px;color:#d29922;text-align:right}.C .mem{margin-left:auto;color:#8b949e}
+  .C .tree{color:#30363d}
+  .C .ft{padding:7px 12px;border-top:1px solid #1f2630;color:#6e7681;font-size:11px;background:#10161e}
+  .C .ft b{color:#e6edf3}
+
+  /* ============ D · BONSAI (organic / editorial) ============ */
+  .D{width:380px;border-radius:16px;overflow:hidden;background:#15181a;
+    border:.5px solid #2b302c;box-shadow:0 18px 44px rgba(0,0,0,.5)}
+  .D .h{display:flex;align-items:center;gap:10px;padding:15px 16px 12px}
+  .D .mk{width:26px;height:26px;border-radius:9px;background:radial-gradient(circle at 35% 30%,#8fd6a8,#3c7d55);
+    display:grid;place-items:center;color:#0e2a1d;font-weight:700;font-size:13px}
+  .D .w{font-family:"SF Pro Rounded","SF Pro Display",sans-serif;font-weight:700;font-size:17px;letter-spacing:.3px}
+  .D .gv{margin-left:auto;font-size:11px;color:#7e8a80}.D .gv b{color:#7cc99a;font-weight:600}
+  .D .lab{font-size:10px;font-weight:600;letter-spacing:2px;color:#5a655c;padding:6px 18px 6px}
+  .D .stack{padding:0 12px}
+  .D .sh{display:flex;align-items:center;gap:9px;padding:8px 6px}
+  .D .leaf{width:9px;height:9px;border-radius:0 9px 9px 9px;background:#7cc99a}
+  .D .sn{font-weight:600;font-size:14px}.D .sv{margin-left:auto;font-size:11px;color:#7e8a80}
+  .D .branch{margin-left:10px;border-left:1.5px solid #2b302c;padding-left:16px}
+  .D .r{display:flex;align-items:center;gap:10px;padding:7px 8px 7px 0;position:relative}
+  .D .r.svc::before{content:"";position:absolute;left:-16px;top:50%;width:12px;height:1.5px;background:#2b302c}
+  .D .nm{font-size:13px;font-weight:500;color:#e6ece7}.D .im{font-size:10.5px;color:#5a655c;font-family:ui-monospace,Menlo,monospace;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px}
+  .D .vt{margin-left:auto;font-size:10px;color:#7e8a80;font-family:ui-monospace,Menlo,monospace;text-align:right}.D .vt .ip{color:#9db8d6}
+  .D .dot{width:6px;height:6px;border-radius:50%;background:#7cc99a;flex:none}.D .dot.stop{background:#4a514b}
+  .D .row2{display:flex;align-items:center;gap:10px;padding:9px 18px}
+  .D .ft{display:flex;gap:16px;padding:12px 18px;border-top:.5px solid #2b302c;font-size:12px;color:#7e8a80}
+</style></head>
+<body>
+  <h1>Consai — four redesign directions</h1>
+  <div class="sub">Same data, four points of view. Tell me which one (or which pieces) to build.</div>
+  <div class="grid">
+
+    <!-- A -->
+    <div class="cell">
+      <div class="cap"><span class="tag">A</span><b>Instrument</b> — dark vibrancy · mono data · semantic color</div>
+      <div class="A">
+        <div class="h"><div class="mk"></div><div class="w">Consai</div><div class="gv"><b>4 running</b> · 7% · 1.4&nbsp;GB</div></div>
+        <div class="lab">STACKS</div>
+        <div class="card">
+          <div class="sh">▾ <span class="dot"></span><span class="sn">shop</span><span class="sv">3/3 · 8% · 412 MB</span></div>
+          <div class="r svc"><span class="pill run">run</span><div><div class="nm">web</div><div class="im">nginx:latest</div></div><div class="vt"><span class="ip">10.0.1.4</span> · 2% · 38&nbsp;MB</div></div>
+          <div class="r svc"><span class="pill run">run</span><div><div class="nm">api</div><div class="im">ghcr.io/acme/api:1.4</div></div><div class="vt"><span class="ip">10.0.1.5</span> · 5% · 196&nbsp;MB</div></div>
+        </div>
+        <div class="lab">CONTAINERS</div>
+        <div class="r"><span class="pill run">run</span><div><div class="nm">conek-pg</div><div class="im">postgres-pgvector:pg17</div></div><div class="vt"><span class="ip">192.168.64.2</span> · 3% · 1.0&nbsp;GB</div></div>
+        <div class="r"><span class="pill stop">stop</span><div><div class="nm" style="color:#8e8e93">scratch</div><div class="im">alpine:latest</div></div><div class="vt">—</div></div>
+        <div class="ft"><span>＋ New</span><span>⬚ Stack</span><span style="margin-left:auto" class="mono">⌥⌘C</span></div>
+      </div>
+    </div>
+
+    <!-- B -->
+    <div class="cell">
+      <div class="cap"><span class="tag">B</span><b>Daylight</b> — light, System-Settings-native · approachable</div>
+      <div class="B">
+        <div class="h"><div class="mk"></div><div class="w">Consai</div><div class="gv"><b>4 running</b> · 7% · 1.4&nbsp;GB</div></div>
+        <div class="lab">Stacks</div>
+        <div class="r"><span class="dot run"></span><span class="grp">shop</span><span class="gc">3/3 running · 412 MB</span></div>
+        <div class="r svc"><span class="dot run"></span><div><div class="nm">web</div><div class="im">nginx:latest</div></div><div class="vt"><span class="ip">10.0.1.4</span> · 38 MB</div></div>
+        <div class="r svc"><span class="dot run"></span><div><div class="nm">api</div><div class="im">ghcr.io/acme/api:1.4</div></div><div class="vt"><span class="ip">10.0.1.5</span> · 196 MB</div></div>
+        <div class="lab">Containers</div>
+        <div class="r"><span class="dot run"></span><div><div class="nm">conek-pg</div><div class="im">postgres-pgvector:pg17</div></div><div class="vt"><span class="ip">192.168.64.2</span> · 1.0 GB</div></div>
+        <div class="r"><span class="dot stop"></span><div><div class="nm" style="color:#a0a0a6">scratch</div><div class="im">alpine:latest</div></div><div class="vt">Stopped</div></div>
+        <div class="ft"><span>New container</span><span>Compose…</span><span>Settings</span></div>
+      </div>
+    </div>
+
+    <!-- C -->
+    <div class="cell">
+      <div class="cap"><span class="tag">C</span><b>Terminal</b> — TUI / lazydocker · column-aligned · power-user</div>
+      <div class="C">
+        <div class="h">consai<b> ●4</b> ·<span> idle 1</span><span class="sp">cpu 7% mem 1.4G</span></div>
+        <div class="grp">── stacks ───────────────────────</div>
+        <div class="r"><span class="st run">▸ shop</span><span class="nm"></span><span class="ip"></span><span class="cpu">8%</span><span class="mem">412M</span></div>
+        <div class="r"><span class="tree">├</span><span class="st run">UP</span><span class="nm">web</span><span class="ip">10.0.1.4</span><span class="cpu">2%</span><span class="mem">38M</span></div>
+        <div class="r"><span class="tree">└</span><span class="st run">UP</span><span class="nm">api</span><span class="ip">10.0.1.5</span><span class="cpu">5%</span><span class="mem">196M</span></div>
+        <div class="grp">── containers ───────────────────</div>
+        <div class="r"><span class="tree"> </span><span class="st run">UP</span><span class="nm">conek-pg</span><span class="ip">192.168.64.2</span><span class="cpu">3%</span><span class="mem">1.0G</span></div>
+        <div class="r"><span class="tree"> </span><span class="st stop">DOWN</span><span class="nm">scratch</span><span class="ip">—</span><span class="cpu">—</span><span class="mem">—</span></div>
+        <div class="ft"><b>n</b> new · <b>u</b> up · <b>s</b> stop · <b>l</b> logs · <b>⌘,</b> prefs</div>
+      </div>
+    </div>
+
+    <!-- D -->
+    <div class="cell">
+      <div class="cap"><span class="tag">D</span><b>Bonsai</b> — organic · branch motif · distinct identity</div>
+      <div class="D">
+        <div class="h"><div class="mk">心</div><div class="w">Consai</div><div class="gv"><b>4 alive</b> · 7% · 1.4&nbsp;GB</div></div>
+        <div class="lab">STACKS</div>
+        <div class="stack">
+          <div class="sh"><span class="leaf"></span><span class="sn">shop</span><span class="sv">3 of 3 · 412 MB</span></div>
+          <div class="branch">
+            <div class="r svc"><span class="dot"></span><div><div class="nm">web</div><div class="im">nginx:latest</div></div><div class="vt"><span class="ip">10.0.1.4</span> · 38M</div></div>
+            <div class="r svc"><span class="dot"></span><div><div class="nm">api</div><div class="im">ghcr.io/acme/api</div></div><div class="vt"><span class="ip">10.0.1.5</span> · 196M</div></div>
+          </div>
+        </div>
+        <div class="lab">CONTAINERS</div>
+        <div class="row2"><span class="dot"></span><div style="flex:1"><div class="nm">conek-pg</div><div class="im">postgres-pgvector:pg17</div></div><div class="vt"><span class="ip">192.168.64.2</span> · 1.0G</div></div>
+        <div class="row2"><span class="dot stop"></span><div style="flex:1"><div class="nm" style="color:#7e8a80">scratch</div><div class="im">alpine:latest</div></div><div class="vt">resting</div></div>
+        <div class="ft"><span>＋ Grow</span><span>⬚ Stack</span><span>⚙ Tend</span></div>
+      </div>
+    </div>
+
+  </div>
+</body></html>
