@@ -44,10 +44,12 @@ struct SettingsWindow: View {
 
             Section("Binaries") {
                 LabeledContent("container") {
-                    TextField("auto-detected", text: $containerBinaryPath).frame(maxWidth: 240)
+                    TextField("auto-detected", text: $containerBinaryPath)
+                        .textFieldStyle(.roundedBorder).frame(maxWidth: 240)
                 }
                 LabeledContent("container-compose") {
-                    TextField("auto-detected", text: $composeBinaryPath).frame(maxWidth: 240)
+                    TextField("auto-detected", text: $composeBinaryPath)
+                        .textFieldStyle(.roundedBorder).frame(maxWidth: 240)
                 }
                 Text("Override only if your binaries aren't in a standard location. Empty = auto-detect. Applies on relaunch.")
                     .font(.caption).foregroundStyle(.secondary)

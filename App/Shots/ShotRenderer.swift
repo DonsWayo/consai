@@ -62,6 +62,47 @@ enum ShotRenderer {
         FileHandle.standardError.write(Data("rendered live panel to \(dir.path)\n".utf8))
     }
 
+    /// Capture the panel at its NATURAL (self-sized) height — the way MenuBarExtra(.window)
+    /// sizes its popover. The fixed-size `shoot` can't reveal sizing regressions (it forces a
+    /// frame); this one lets the panel report its own ideal height so the menu-bar collapse
+    /// bug (ScrollView → 0pt) is reproducible/verifiable off the menu bar.
+    static func renderSelfSize(to dir: URL) async {
+        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        let state = AppState()
+        await state.refresh()
+        try? await Task.sleep(for: .seconds(2.5))
+        await state.refresh()
+
+        let view = PanelView().environment(state).preferredColorScheme(.dark).tint(Theme.jade)
+        let host = NSHostingController(rootView: AnyView(view))
+        let window = NSWindow(
+            contentRect: NSRect(x: 300, y: 300, width: Theme.panelWidth, height: 200),
+            styleMask: [.titled, .fullSizeContentView], backing: .buffered, defer: false
+        )
+        window.titlebarAppearsTransparent = true
+        window.titleVisibility = .hidden
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.contentViewController = host
+        window.makeKeyAndOrderFront(nil)
+        NSApp.activate(ignoringOtherApps: true)
+
+        // Let the async refresh + preference-driven sizing settle, then snap the window to the
+        // panel's fitting height and capture.
+        try? await Task.sleep(for: .milliseconds(1200))
+        let fit = host.view.fittingSize
+        window.setContentSize(NSSize(width: Theme.panelWidth, height: fit.height))
+        try? await Task.sleep(for: .milliseconds(400))
+
+        let path = dir.appendingPathComponent("selfsize-panel.png").path
+        FileHandle.standardError.write(Data("self-sized panel height = \(Int(fit.height))pt\n".utf8))
+        let proc = Process()
+        proc.executableURL = URL(fileURLWithPath: "/usr/sbin/screencapture")
+        proc.arguments = ["-x", "-o", "-l\(window.windowNumber)", path]
+        try? proc.run()
+        proc.waitUntilExit()
+        window.orderOut(nil)
+    }
+
     private static func shoot<V: View>(_ view: V, width: CGFloat, height: CGFloat, name: String, dir: URL) async {
         let themed = view.frame(width: width, height: height)
             .preferredColorScheme(.dark).tint(Theme.jade)
