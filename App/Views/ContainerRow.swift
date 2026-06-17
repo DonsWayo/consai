@@ -42,8 +42,13 @@ struct ContainerRow: View {
             }
         }
         .padding(.vertical, 7)
+        .padding(.horizontal, 6)
+        .background(hovering ? Theme.hover : .clear, in: RoundedRectangle(cornerRadius: 7))
         .contentShape(Rectangle())
         .onHover { hovering = $0 }
+        .animation(.easeOut(duration: 0.13), value: hovering)
+        .onTapGesture { openWindow(id: "detail", value: container.id) }
+        .help("Click for details")
         .confirmationDialog("Delete \(container.name)?", isPresented: $confirmingDelete) {
             Button("Delete", role: .destructive) { Task { await appState.delete(container.id) } }
             Button("Cancel", role: .cancel) {}
@@ -105,9 +110,13 @@ struct ContainerRow: View {
     }
 }
 
-/// A living status indicator — jade when alive, amber transitioning, dim at rest.
+/// A living status indicator — jade when alive (a slow "breathing" aura), amber
+/// transitioning, dim at rest. The breath is the panel's signature; it's the one place we
+/// spend motion, and it's disabled under Reduce Motion.
 struct StatusDot: View {
     let status: ContainerStatus
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var breathing = false
 
     private var color: Color {
         switch status {
@@ -118,13 +127,32 @@ struct StatusDot: View {
         }
     }
 
+    private var isAlive: Bool { status == .running }
+
     var body: some View {
         Circle()
             .fill(color)
             .frame(width: 6, height: 6)
             .overlay(
-                Circle().fill(color.opacity(status == .running ? 0.18 : 0)).frame(width: 12, height: 12)
+                Circle()
+                    .fill(color.opacity(isAlive ? 0.22 : 0))
+                    .frame(width: 13, height: 13)
+                    .scaleEffect(breathing ? 1.3 : 0.85)
+                    .opacity(breathing ? 0.12 : 0.5)
             )
             .help(status.rawValue)
+            .onAppear { updateBreathing() }
+            .onChange(of: status) { _, _ in updateBreathing() }
+            .onChange(of: reduceMotion) { _, _ in updateBreathing() }
+    }
+
+    private func updateBreathing() {
+        guard isAlive, !reduceMotion else {
+            withAnimation(.linear(duration: 0.1)) { breathing = false }
+            return
+        }
+        withAnimation(.easeInOut(duration: 2.1).repeatForever(autoreverses: true)) {
+            breathing = true
+        }
     }
 }

@@ -4,7 +4,9 @@ import SwiftUI
 /// pixel-consistent. Organic dark palette, jade = alive, soft-blue = network/IP.
 enum Theme {
     static let bg        = Color(hex: 0x15181A)   // panel background
+    static let bgTop     = Color(hex: 0x1C2124)   // subtle elevated top (panel depth gradient)
     static let surface   = Color(hex: 0x1A1E1B)   // stack card
+    static let hover     = Color(hex: 0x222826)   // row hover wash
     static let hairline  = Color(hex: 0x2B302C)   // separators, branch
     static let jade      = Color(hex: 0x7CC99A)   // alive / brand
     static let jadeDeep  = Color(hex: 0x3C7D55)   // mark gradient end
