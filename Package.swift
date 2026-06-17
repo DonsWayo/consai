@@ -62,5 +62,9 @@ let package = Package(
         // Native-Swift icon builder (replaces scripts/make-icon.sh): `swift run icon` renders the
         // icon and writes App/Resources/AppIcon.icns.
         .executableTarget(name: "icon", path: "Tools/icon"),
+        // Release signing: Developer ID codesign + notarize (notarytool) + staple + DMG.
+        // One-time credential setup: xcrun notarytool store-credentials "Consai" ...
+        // Then: CONSAI_IDENTITY="Developer ID Application: ..." swift run bundle && swift run sign
+        .executableTarget(name: "sign", path: "Tools/sign"),
     ]
 )
