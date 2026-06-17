@@ -12,6 +12,8 @@ public protocol ContainerEngine: Sendable {
     func memoryUsage(id: String) async -> UInt64?
     /// Best-effort cumulative CPU time in microseconds (for delta-based CPU%); nil if unavailable.
     func cpuUsage(id: String) async -> UInt64?
+    /// Full inspect data (env, ports, mounts, started) for one container.
+    func detail(id: String) async throws -> ContainerDetail
 }
 
 /// Orchestrates compose stacks by shelling out to the `container-compose` CLI.

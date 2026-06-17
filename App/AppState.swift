@@ -291,6 +291,19 @@ final class AppState {
         }
     }
 
+    // MARK: - Container detail / exec
+
+    func detail(_ id: String) async -> ContainerDetail? {
+        do { return try await containerEngine.detail(id: id) }
+        catch { lastError = describe(error); return nil }
+    }
+
+    /// Open an interactive shell into the container in Terminal.
+    func execShell(_ id: String) {
+        let binary = AppState.storedPath("containerBinaryPath") ?? "/usr/local/bin/container"
+        ContainerShell.openShell(binaryPath: binary, id: id)
+    }
+
     // MARK: - Networks & volumes
 
     func loadInfra() async {

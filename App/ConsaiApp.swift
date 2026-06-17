@@ -80,5 +80,11 @@ struct ConsaiApp: App {
                 .preferredColorScheme(.dark).tint(Theme.jade)
         }
         .defaultSize(width: 720, height: 460)
+
+        WindowGroup(id: "detail", for: String.self) { $id in
+            DetailWindow(containerID: id ?? "")
+                .environment(appState)
+        }
+        .defaultSize(width: 480, height: 420)
     }
 }

@@ -120,6 +120,23 @@ final class SpyProcessRunner: ProcessRunning, @unchecked Sendable {
     }
 }
 
+@Suite struct ContainerDetailTests {
+    @Test func execCommandBuildsInteractiveShell() {
+        #expect(containerExecCommand(binary: "/usr/local/bin/container", id: "web")
+                == "/usr/local/bin/container exec -it web sh")
+        #expect(containerExecCommand(binary: "container", id: "db", shell: "bash")
+                == "container exec -it db bash")
+    }
+}
+
+@Suite struct FormatBytesTests {
+    @Test func formatsMBAndGB() {
+        #expect(formatBytes(38 * 1_048_576) == "38 MB")
+        #expect(formatBytes(1024 * 1_048_576) == "1.0 GB")
+        #expect(formatBytes(0) == "0 MB")
+    }
+}
+
 @Suite struct CLIServiceHealthTests {
     @Test func parsesNegativeSignalsAsStopped() {
         #expect(CLIServiceHealth.parseStatus(exitCode: 0, output: "apiserver is not running") == .stopped)
