@@ -1,0 +1,39 @@
+name: Consai
+options:
+  bundleIdPrefix: com.donswayo
+  deploymentTarget:
+    macOS: "26.0"
+  createIntermediateGroups: true
+
+packages:
+  # Local engine package. It declares its own dependency on apple/container,
+  # so the SDK is pulled transitively.
+  ConsaiCore:
+    path: ConsaiCore
+
+targets:
+  Consai:
+    type: application
+    platform: macOS
+    sources:
+      - path: App
+    info:
+      path: App/Info.plist
+      properties:
+        LSUIElement: true            # agent app — no Dock icon (menu bar only)
+        CFBundleDisplayName: Consai
+        CFBundleShortVersionString: "0.1.0"
+        LSMinimumSystemVersion: "26.0"
+    entitlements:
+      path: App/Consai.entitlements  # intentionally empty → NOT sandboxed (like Orchard)
+      properties: {}
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.donswayo.consai
+        MARKETING_VERSION: "0.1.0"
+        SWIFT_VERSION: "6.2"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
+    dependencies:
+      - package: ConsaiCore
+        product: ConsaiCore
