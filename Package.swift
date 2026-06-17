@@ -66,5 +66,16 @@ let package = Package(
         // One-time credential setup: xcrun notarytool store-credentials "Consai" ...
         // Then: CONSAI_IDENTITY="Developer ID Application: ..." swift run bundle && swift run sign
         .executableTarget(name: "sign", path: "Tools/sign"),
+        // Accessibility-driven UI smoke tests (no xcodeproj/XCUITest required).
+        // Requires Consai to be running and Accessibility granted to the terminal.
+        // Run: swift run uitest
+        .executableTarget(
+            name: "uitest",
+            path: "Tools/uitest",
+            linkerSettings: [
+                .linkedFramework("ApplicationServices"),
+                .linkedFramework("AppKit"),
+            ]
+        ),
     ]
 )
