@@ -66,11 +66,20 @@ struct SettingsWindow: View {
                     Stepper("\(pollClosed, specifier: "%.0f")s", value: $pollClosed, in: 5...60, step: 5)
                 }
             }
+
+            Section("About") {
+                LabeledContent("Version") {
+                    Text(AppInfo.current.displayVersion).textSelection(.enabled)
+                }
+                LabeledContent("License") { Text("MIT") }
+                Link("github.com/DonsWayo/consai", destination: URL(string: "https://github.com/DonsWayo/consai")!)
+                    .font(.caption)
+            }
         }
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .background(Theme.bg)
-        .frame(width: 420, height: 360)
+        .frame(width: 420, height: 400)
         .onAppear { NSApp.activate(ignoringOtherApps: true) }
     }
 

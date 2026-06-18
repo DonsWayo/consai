@@ -67,4 +67,4 @@ See [`CLAUDE.md`](CLAUDE.md) for the risk register and conventions.
 
 ## License
 
-MIT (intended).
+MIT — see [`LICENSE`](LICENSE).
