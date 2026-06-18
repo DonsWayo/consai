@@ -34,6 +34,10 @@ public struct SetupChecker: Sendable {
         guard let result = try? await runner.run(executable: path, arguments: ["system", "status"], cwd: nil)
         else { return false }
         let out = (result.stdout + result.stderr).lowercased()
+        // Check negative signals first — "not running" contains "running", so order matters.
+        if out.contains("not running") || out.contains("stopped") || out.contains("not started") {
+            return false
+        }
         return result.exitCode == 0 || out.contains("running")
     }
 

@@ -1,10 +1,12 @@
 import SwiftUI
 import ConsaiCore
+import ConsaiKit
 
 /// A slim, dismissible banner shown in the panel when a newer version of
 /// `container` or `container-compose` is available on GitHub.
 struct UpdateBanner: View {
     let update: UpdateAvailability
+    let onDismiss: () -> Void
     @Environment(\.openURL) private var openURL
 
     var body: some View {
@@ -32,6 +34,14 @@ struct UpdateBanner: View {
                     .foregroundStyle(Theme.amber)
             }
             .buttonStyle(.plain)
+
+            Button(action: onDismiss) {
+                Image(systemName: "xmark")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(Theme.dim)
+            }
+            .buttonStyle(.plain)
+            .help("Dismiss until next check")
         }
         .padding(.horizontal, 16).padding(.vertical, 7)
         .background(Theme.amber.opacity(0.08))

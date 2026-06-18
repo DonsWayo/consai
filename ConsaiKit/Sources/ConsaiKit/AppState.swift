@@ -300,6 +300,8 @@ public final class AppState {
     }
 
     public func clearError() { lastError = nil }
+    public func dismissContainerUpdate() { containerUpdate = nil }
+    public func dismissComposeUpdate() { composeUpdate = nil }
 
     // MARK: - Images
 
