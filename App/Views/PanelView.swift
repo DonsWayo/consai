@@ -19,6 +19,7 @@ struct PanelView: View {
     /// Natural height of the scrollable list, measured so the menu-bar window can size to its
     /// content instead of collapsing the ScrollView to ~0pt (MenuBarExtra sizes to ideal size).
     @State private var listHeight: CGFloat = 220
+    @State private var didTriggerSetup = false
     private let listCap: CGFloat = 460     // scroll past this; never grow taller
     private let listFloor: CGFloat = 80    // a single row shouldn't look cramped
 
@@ -34,10 +35,10 @@ struct PanelView: View {
                 ErrorBanner(message: error) { appState.clearError() }
             }
             if let u = appState.containerUpdate {
-                UpdateBanner(update: u)
+                UpdateBanner(update: u) { appState.dismissContainerUpdate() }
             }
             if let u = appState.composeUpdate {
-                UpdateBanner(update: u)
+                UpdateBanner(update: u) { appState.dismissComposeUpdate() }
             }
 
             content
@@ -51,7 +52,10 @@ struct PanelView: View {
         .tint(Theme.jade)
         .onAppear {
             appState.setPanelVisible(true)
-            if !setupCompleted { openWindow(id: "setup") }
+            if !setupCompleted && !didTriggerSetup {
+                didTriggerSetup = true
+                openWindow(id: "setup")
+            }
         }
         .onDisappear { appState.setPanelVisible(false) }
     }

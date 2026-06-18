@@ -9,6 +9,7 @@ struct StackSection: View {
     let stack: Stack
     @State private var expanded = true
     @State private var hovering = false
+    @State private var confirmingDown = false
 
     private var busy: Bool { appState.inFlight.contains(stack.projectName) }
     private var allRunning: Bool { stack.total > 0 && stack.runningCount == stack.total }
@@ -19,6 +20,18 @@ struct StackSection: View {
             if expanded && !stack.services.isEmpty { branch }
         }
         .padding(.horizontal, 12)
+        .confirmationDialog(
+            "Stop stack \"\(stack.projectName)\"?",
+            isPresented: $confirmingDown,
+            titleVisibility: .visible,
+            actions: {
+                Button("Stop \(stack.total) service\(stack.total == 1 ? "" : "s")", role: .destructive) {
+                    Task { await appState.composeDown(stack) }
+                }
+                Button("Cancel", role: .cancel) {}
+            },
+            message: { Text("All running services in this stack will be stopped.") }
+        )
     }
 
     private var header: some View {
@@ -84,7 +97,7 @@ struct StackSection: View {
         if appState.composeAvailable, let path = stack.composeFilePath {
             let file = URL(fileURLWithPath: path)
             stackButton("play.fill", "Up") { Task { await appState.composeUp(file: file) } }
-            stackButton("stop.fill", "Down") { Task { await appState.composeDown(stack) } }
+            stackButton("stop.fill", "Down") { confirmingDown = true }
             stackButton("folder", "Reveal compose file") {
                 NSWorkspace.shared.activateFileViewerSelecting([file])
             }

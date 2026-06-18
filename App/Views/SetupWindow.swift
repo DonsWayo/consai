@@ -216,9 +216,11 @@ struct SetupWindow: View {
 
     private func runChecks() async {
         checking = true
-        async let c = checker.checkContainer()
-        async let s = checker.checkService()
-        async let q = checker.checkCompose()
+        let containerPath = AppState.storedPath("containerBinaryPath")
+        let composePath = AppState.storedPath("composeBinaryPath")
+        async let c = checker.checkContainer(binaryPath: containerPath)
+        async let s = checker.checkService(binaryPath: containerPath)
+        async let q = checker.checkCompose(binaryPath: composePath)
         let (ci, si, qi) = await (c, s, q)
         withAnimation(.easeInOut(duration: 0.3)) {
             containerInstalled = ci.installed

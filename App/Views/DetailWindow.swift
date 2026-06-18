@@ -76,6 +76,7 @@ struct DetailWindow: View {
     }
 
     private func startRefreshing() {
+        refreshTask?.cancel()
         refreshTask = Task { @MainActor in
             while !Task.isCancelled {
                 detail = await appState.detail(containerID)
