@@ -8,6 +8,10 @@ import AppKit
 enum ConsaiEntry {
     static func main() {
         let args = CommandLine.arguments
+        if args.contains("--version") || args.contains("-v") {
+            print("Consai \(AppInfo.current.displayVersion)")
+            exit(0)
+        }
         if let i = args.firstIndex(of: "--render-shots") {
             let dir = URL(fileURLWithPath: i + 1 < args.count ? args[i + 1] : "shots")
             let app = NSApplication.shared
