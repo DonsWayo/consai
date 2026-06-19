@@ -23,20 +23,14 @@ struct HeroView: View {
 
             HStack(spacing: 48) {
                 mark
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: 18) {
                     Text("Consai")
                         .font(.system(size: 88, weight: .bold, design: .rounded))
                         .foregroundStyle(Theme.text)
                     Text("Your containers, grouped into stacks — right from the menu bar.")
-                        .font(.system(size: 26, weight: .regular, design: .rounded))
+                        .font(.system(size: 28, weight: .regular, design: .rounded))
                         .foregroundStyle(Theme.dim)
-                        .frame(maxWidth: 660, alignment: .leading)
-                    HStack(spacing: 10) {
-                        pill("macOS 26")
-                        pill("SwiftUI")
-                        pill("Apple container")
-                    }
-                    .padding(.top, 6)
+                        .frame(maxWidth: 700, alignment: .leading)
                 }
                 Spacer(minLength: 0)
             }
@@ -60,15 +54,6 @@ struct HeroView: View {
         }
         .frame(width: 400, height: 400)
         .shadow(color: .black.opacity(0.35), radius: 28, y: 16)
-    }
-
-    private func pill(_ text: String) -> some View {
-        Text(text)
-            .font(.system(size: 20, weight: .medium, design: .monospaced))
-            .foregroundStyle(Theme.jade)
-            .padding(.horizontal, 18).padding(.vertical, 8)
-            .background(Capsule().fill(Theme.jade.opacity(0.12)))
-            .overlay(Capsule().stroke(Theme.jade.opacity(0.25), lineWidth: 1))
     }
 
     /// A tiled grid of leaf marks as a subtle background texture.
