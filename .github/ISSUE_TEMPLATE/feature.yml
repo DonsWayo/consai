@@ -1,0 +1,33 @@
+name: Feature request
+description: Propose something new for Consai
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem does this solve?
+      description: Describe the user pain. "I want to..." is a good shape.
+    validations:
+      required: true
+  - type: textarea
+    id: shape
+    attributes:
+      label: Proposed shape
+      description: How should it work? Sketch the UI or the API.
+        Keep it menu-bar-first in mind (see R8 in CLAUDE.md).
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What did you consider and reject? Why?
+    validations:
+      required: false
+  - type: textarea
+    id: scope
+    attributes:
+      label: Out of scope?
+      description: Anything that should explicitly NOT be in this change.
+    validations:
+      required: false

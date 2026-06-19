@@ -1,0 +1,58 @@
+name: Bug report
+description: Something is broken in Consai
+labels: ["bug"]
+body:
+  - type: textarea
+    id: summary
+    attributes:
+      label: What happened
+      description: A clear, one-paragraph description of the bug.
+    validations:
+      required: true
+  - type: textarea
+    id: repro
+    attributes:
+      label: Steps to reproduce
+      description: What you did, in order. The more specific, the better.
+      placeholder: |
+        1. Open Consai.app
+        2. Click on container X
+        3. ...
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: What you thought would happen instead.
+    validations:
+      required: true
+  - type: textarea
+    id: versions
+    attributes:
+      label: Versions
+      description: Paste the output of each command on a separate line.
+      placeholder: |
+        sw_vers:                       # macOS
+        container --version:           # daemon
+        container-compose --version:   # compose (optional)
+        Consai --version:              # app
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs / screenshots
+      description: Console.app output filtered to "Consai", screenshot of
+        the broken state, anything else relevant. Paste inline or link.
+    validations:
+      required: false
+  - type: checkboxes
+    id: tests
+    attributes:
+      label: Pre-flight
+      options:
+        - label: I ran `swift test` on this branch and it passes
+          required: true
+        - label: I read CLAUDE.md (R1, R7, R11 are the usual gotchas)
+          required: false

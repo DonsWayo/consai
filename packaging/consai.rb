@@ -1,3 +1,6 @@
+# typed: strict
+# frozen_string_literal: true
+
 cask "consai" do
   version "0.1.0"
   # Update sha256 after each release:
@@ -6,16 +9,18 @@ cask "consai" do
 
   url "https://github.com/DonsWayo/consai/releases/download/v#{version}/Consai-#{version}.dmg"
   name "Consai"
-  desc "Menu-bar-first macOS companion for Apple's container tooling"
+  desc "Menu-bar-first companion for Apple's container tooling"
   homepage "https://github.com/DonsWayo/consai"
 
-  depends_on macos: ">= :sequoia"
+  license "MIT"
+
+  depends_on macos: ">= :tahoe"
 
   app "Consai.app"
 
   zap trash: [
     "~/Library/Application Support/com.donswayo.consai",
-    "~/Library/Preferences/com.donswayo.consai.plist",
     "~/Library/Caches/com.donswayo.consai",
+    "~/Library/Preferences/com.donswayo.consai.plist",
   ]
 end
