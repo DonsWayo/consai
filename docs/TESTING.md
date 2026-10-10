@@ -8,41 +8,36 @@ differently, and coverage should be read per tier — not as a single blended nu
 
 Everything builds and runs **locally** — there is no GitHub Actions / hosted CI (Apple's
 `container` SDK can't build on hosted runners, and the project targets a developer's
-macOS 26 / Xcode 26 machine). The pre-flight check is a native SwiftPM command plugin
-(`Plugins/Check`), not a shell script:
-
-```bash
-swift package --disable-sandbox check                                       # build + test
-swift package --disable-sandbox --allow-writing-to-package-directory check coverage   # + llvm-cov report
-```
-
-(`--disable-sandbox` lets the plugin spawn `swift`/`xcrun`; the write flag is needed only
-for the `coverage` run, which writes profdata under `.build`.)
-
-Or invoke the toolchain directly — `swift test` is itself the native test runner:
+macOS 26 / Xcode 26 machine). `swift test` is the native test runner; the coverage
+report is a small Swift executable (`Tools/coverage`) that shells out to `xcrun
+llvm-cov` — it never re-invokes SwiftPM, so it can't hit the build-lock deadlock a
+command plugin does:
 
 ```bash
 swift test                                  # fast, no daemon required
 swift test --enable-code-coverage           # adds llvm-cov instrumentation
+swift run coverage                          # prints the logic-tier llvm-cov report
+```
 
+Or invoke llvm-cov directly:
 PROF=$(find .build -name default.profdata | head -1)
 BIN=$(find .build -name ConsaiPackageTests -type f | head -1)
 xcrun llvm-cov report "$BIN" -instr-profile "$PROF" ConsaiCore/Sources ConsaiKit/Sources
 ```
 
-## Tier 1 — pure logic (unit-tested here, ~93% line coverage)
+## Tier 1 — pure logic (unit-tested here, ~90% line coverage)
 
 No daemon, no subprocess, no UI. All I/O sits behind protocols, so these are tested with
 in-memory fakes and a `SpyProcessRunner` that records argv/cwd instead of spawning.
 
 | Area | File | Line cov |
 |------|------|---------:|
-| App orchestration | `ConsaiKit/AppState.swift` | ~93% |
+| App orchestration | `ConsaiKit/AppState.swift` | ~86% |
 | Stack assembly | `ConsaiCore/Engines/ProjectRegistry.swift` | ~94% |
 | Registry persistence | `ConsaiCore/Engines/RegistryStore.swift` | ~93% |
 | Service health | `ConsaiCore/Engines/CLIServiceHealth.swift` | ~91% |
 | Compose CLI wrapper | `ConsaiCore/Engines/CLIComposeEngine.swift` | ~88% |
-| Container creation | `ConsaiCore/Engines/CLIContainerCreator.swift` | ~84% |
+| Container creation | `ConsaiCore/Engines/CLIContainerCreator.swift` | ~95% |
 | Vitals math | `ConsaiCore/Engines/VitalsSampler.swift` | 100% |
 | Models | `ConsaiCore/Models/*` | 90–100% |
 

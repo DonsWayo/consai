@@ -23,6 +23,13 @@ Dates are `YYYY-MM-DD` in the project's local timezone.
 - Stray `docs/mockups/preview.png` (Android emulator screenshot from a
   pre-SwiftUI prototype).
 
+### Fixed
+- Stale verification instructions: `docs/TESTING.md` and `CLAUDE.md` still
+  described the removed `check` SwiftPM command plugin (`swift test` +
+  `swift run coverage` replaced it), and `Package.swift` comments still
+  referenced the removed `scripts/bundle.sh`. Coverage table in
+  `docs/TESTING.md` re-measured; `ContainerImage` helpers now unit-tested.
+
 ## [0.1.0] — 2026-06-19
 
 Initial release. Menu-bar-first macOS companion for Apple's `container`

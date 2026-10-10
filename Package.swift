@@ -5,7 +5,7 @@ import PackageDescription
 // integration fails to wire up the container SDK's transitive package modules
 // (ServiceContextModule, SwiftASN1, ...); SwiftPM builds the same graph cleanly.
 // Open this Package.swift directly in Xcode for GUI development, or use `swift build`
-// + scripts/bundle.sh to produce Consai.app.
+// + `swift run bundle` to produce Consai.app.
 let package = Package(
     name: "Consai",
     platforms: [.macOS(.v26)],
@@ -32,7 +32,7 @@ let package = Package(
             dependencies: ["ConsaiCore"],
             path: "ConsaiKit/Sources/ConsaiKit"
         ),
-        // The menu bar app (SwiftUI). Bundled into Consai.app by scripts/bundle.sh.
+        // The menu bar app (SwiftUI). Bundled into Consai.app by `swift run bundle`.
         .executableTarget(
             name: "Consai",
             dependencies: ["ConsaiCore", "ConsaiKit"],
